@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game test</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+    <body>
+        <div id="game-container">
+            <div id="top-bar">
+                <div>Счет: <span id="score-display">0</span></div>
+                <div>Убито: <span id="kills-display">0</span></div>
+                <div>Множитель: <span id="multiplier-display">x1.00</span></div>
+                <div>Увеличение через: <span id="killsForNext-display">10</span></div>
+            </div>
+            <canvas id="gameCanvas" width="800" height="800"></canvas>
+            <div id="main-menu" class="ui-panel">
+                <h1>Тест игры</h1>
+                <button id="start-game-btn">Новая игра</button>
+            </div>
+            <div id="game-over" class="ui-panel hidden">
+                <h1>Увы, вы проиграли😢</h1>
+                <button id="restart-btn">Играть снова</button>
+            </div>
+        </div>
+        <script type="module" src="js/main.js"></script>
+    </body>
+</html>
