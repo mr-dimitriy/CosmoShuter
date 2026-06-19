@@ -142,7 +142,7 @@ export const gameConfig = {
         },
         {
             name: 'Хаос',
-            killsNeeded: 150,
+            killsNeeded: 300,
             spawnInterval: 600,
             maxEnemies: 30,
             enemyTypes: [
@@ -154,7 +154,7 @@ export const gameConfig = {
         },
         {
             name: 'Безумие',
-            killsNeeded: 150,
+            killsNeeded: 500,
             spawnInterval: 500,
             maxEnemies: 100,
             enemyTypes: [
