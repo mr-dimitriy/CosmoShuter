@@ -31,7 +31,7 @@ class Arcanoid extends BaseGame{
         this.isGameOver = false;
         this.gamePause = false;
         this.currentLevel = 1;
-        this.lives = 3;
+        this.lives = 5;
         this.lastFrameTime = Date.now();
 
 
@@ -93,14 +93,11 @@ class Arcanoid extends BaseGame{
     }    
 
     initLevel() {
-        // Создаем уровень с блоками
-        const rows = 5;
-        const cols = 10;
-        const blockWidth = 80;
-        const blockHeight = 30;
-        const padding = 10;
-        
-        this.level = new Level(rows, cols, blockWidth, blockHeight, padding,this.currentLevel);
+
+        const levelsCount = gameConfig.levelMaps.length;
+        const randomLevel = Math.floor(Math.random() * levelsCount);
+
+        this.level = new Level(gameConfig.levelMaps[randomLevel]);
         
         // Создаем платформу
         const paddleX = (this.canvas.width - gameConfig.paddle.paddleWidth) / 2;
@@ -110,7 +107,7 @@ class Arcanoid extends BaseGame{
         
         // Создаем мяч
         const ballRadius = 8;
-        const ballSpeed = 5;
+        const ballSpeed = 8;
         const ballX = this.canvas.width / 2;
         const ballY = paddleY - ballRadius - 5;
         
@@ -262,25 +259,34 @@ class Arcanoid extends BaseGame{
         
         // Базовый отскок - инвертируем вертикальную скорость
         ball.dy = -Math.abs(ball.dy); // Гарантируем движение вверх
+    
+        // Вычисляем точку удара (-1 левый край, 0 центр, 1 правый край)
+        const hitPoint = (ball.x - (paddle.x + paddle.sizeX / 2)) / (paddle.sizeX / 2);
+        
+        // Угол отскока от точки удара (максимум 60 градусов)
+        const maxAngle = Math.PI / 3;
+        const angle = hitPoint * maxAngle;
         
         // Влияние движения платформы на мяч
-        const paddleDirection = paddle.getMovementDirection();
-        const influence = 2; // Сила влияния платформы (можно настроить)
+        const platformInfluence = 0.4; // Коэффициент влияния (0-1)
+        const platformVelocity = paddle.velocity || 0;
         
-        // Если платформа движется, добавляем импульс мячу
-        if (paddleDirection !== 0) {
-            ball.dx += paddleDirection * influence;
-        }
+        // Добавляем скорость платформы к горизонтальной скорости мяча
+        ball.dx += platformVelocity * platformInfluence;
+        
+        // Добавляем угол от точки удара
+        const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+        ball.dx += currentSpeed * Math.sin(angle) * 0.3;
         
         // Нормализация скорости мяча (чтобы не ускорялся бесконечно)
         const targetSpeed = 8; // Базовая скорость мяча
-        const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+        const finalSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
         
-        if (currentSpeed > 0) {
-            ball.dx = (ball.dx / currentSpeed) * targetSpeed;
-            ball.dy = (ball.dy / currentSpeed) * targetSpeed;
+        if (finalSpeed > 0) {
+            ball.dx = (ball.dx / finalSpeed) * targetSpeed;
+            ball.dy = (ball.dy / finalSpeed) * targetSpeed;
         }
-            
+        
         // Поднимаем мяч над платформой, чтобы не застрял
         ball.y = paddle.y - ball.radius;
         
@@ -311,6 +317,7 @@ class Arcanoid extends BaseGame{
     
     nextLevel() {
         this.currentLevel++;
+        this.lives = 5;
         this.ui.showLevelNotification(this.currentLevel);
         this.initLevel();
     }

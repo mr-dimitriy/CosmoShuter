@@ -2275,95 +2275,73 @@ h1 {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Космический шутер</title>
+    <title>Арканоид</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-    <body>
-        <div id="game-wrapper">
-            <!-- Игровая область -->
-            <div id="game-area">
-
-                <canvas id="backgroundCanvas" width="1000" height="900"></canvas>
-
-                <canvas id="gameCanvas" width="1000" height="900"></canvas>
-
-                <div id="notification-multiplier" class="game-notification hidden">
-                    Множитель x<span id="notif-mult-value">2.00</span>!
-                </div>
-                
-                <div id="notification-wave" class="game-notification hidden">
-                    🌊 Волна: <span id="notif-wave-name">Разведка</span>!
-                </div>
-                
-                <div id="notification-bonus" class="game-notification hidden">
-                    ✨ Получено: <span id="notif-bonus-name">Здоровье</span>!
-                </div>
-
-                <div id="main-menu" class="ui-panel">
-                    <h1>Космический шутер</h1>
-                    <button id="start-game-btn">Новая игра</button>
-                </div>
-                <div id="game-over" class="ui-panel hidden">
-                    <h1>Увы, вы проиграли😢</h1>
-                    <button id="restart-btn">Играть снова</button>
-                </div>
-                <div id="game-pause" class="ui-panel hidden">
-                    <h1>Игра на паузе</h1>
-                    <button id="resume-btn">Продолжить</button>
-                </div>
+<body>
+    <div id="game-wrapper">
+        <!-- Игровая область -->
+        <div id="game-area">
+            <canvas id="backgroundCanvas" width="1000" height="900"></canvas>
+            <canvas id="gameCanvas" width="1000" height="900"></canvas>
+            
+            <!-- Уведомления (оставляем только нужные) -->
+            <div id="notification-level" class="game-notification hidden">
+                Уровень <span id="notif-level-value">1</span>!
             </div>
-
-                <!-- Правая панель со статами -->
-            <aside id="stats-panel">
-                <h2>Статистика</h2>
-                
-                <div class="stat-block">
-                    <span class="stat-label">Здоровье:</span>
-                    <div id="panel-health-bar" class="bar-container">
-                        <div id="panel-health-fill" style="width: 100%;"></div>
-                    </div>
-                </div>
-
-                <div class="stat-block">
-                    <span class="stat-label">Скорострельность: <span class="stat-value" id="panel-weapon-speed">1</span></span>
-                </div>
-                <div class="stat-block">
-                    <span class="stat-label">Количество пуль: <span class="stat-value" id="panel-weapon-count">1</span></span>
-                </div>
-
-                <div class="stat-block">
-                    <span class="stat-label">Щит: <span class="stat-value" id="panel-shield-status">Нет</span></span>
-                </div>
-
-                <div class="stat-block">
-                    <span class="stat-label">Волна: <span class="stat-value" id="wave-display">1</span></span>
-                </div>
-
-                <div class="stat-block">
-                    <span class="stat-label">Прогресс: <span class="stat-value" id="wave-progress-display">0/10</span></span>
-                </div>
-
-                <div class="stat-block">
-                    <span class="stat-label">Счет: <span class="stat-value" id="score-display">0</span></span>
-                </div>
-
-                <div class="stat-block">
-                    <span class="stat-label">Убито: <span class="stat-value" id="kills-display">0</span></span>
-                </div>
-                
-                <div class="stat-block">
-                    <span class="stat-label">Множитель: <span class="stat-value" id="multiplier-display">x1.00</span></span>
-                </div>
-
-                <!-- Место для будущего меню скинов -->
-                <div class="menu-section">
-                    <!-- <h3>Внешний вид</h3> -->
-                    <!-- <button id="skin-select-btn">Выбрать корабль</button> -->
-                </div>
-            </aside>
+            <div id="notification-bonus" class="game-notification hidden">
+                ✨ Получено: <span id="notif-bonus-name">Бонус</span>!
+            </div>
+            
+            <!-- Меню -->
+            <div id="main-menu" class="ui-panel">
+                <h1>Арканоид</h1>
+                <button id="start-game-btn">Новая игра</button>
+            </div>
+            <div id="game-over" class="ui-panel hidden">
+                <h1>Увы, вы проиграли 😢</h1>
+                <button id="restart-btn">Играть снова</button>
+            </div>
+            <div id="game-pause" class="ui-panel hidden">
+                <h1>Игра на паузе</h1>
+                <button id="resume-btn">Продолжить</button>
+            </div>
         </div>
-        <script type="module" src="js/main.js"></script>
-    </body>
+        
+        <!-- Правая панель со статами -->
+        <aside id="stats-panel">
+            <h2>Статистика</h2>
+            
+            <div class="stat-block">
+                <span class="stat-label">Уровень: <span class="stat-value" id="level-display">1</span></span>
+            </div>
+            
+            <div class="stat-block">
+                <span class="stat-label">Жизни: <span class="stat-value" id="lives-display">3</span></span>
+            </div>
+            
+            <div class="stat-block">
+                <span class="stat-label">Счет: <span class="stat-value" id="score-display">0</span></span>
+            </div>
+            
+            <div class="stat-block">
+                <span class="stat-label">Разбито блоков: <span class="stat-value" id="blocks-display">0</span></span>
+            </div>
+            
+            <!-- Место для будущих бонусов -->
+            <div class="stat-block">
+                <span class="stat-label">Бонусы:</span>
+                <div id="active-bonuses" class="bonuses-list"></div>
+            </div>
+            
+            <div class="menu-section">
+                <!-- Место для будущего меню -->
+            </div>
+        </aside>
+    </div>
+    
+    <script type="module" src="js/main.js"></script>
+</body>
 </html>
 
 // ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\AssetLoader.js =====
@@ -2561,16 +2539,10 @@ class Arcanoid extends BaseGame{
         const blockHeight = 30;
         const padding = 10;
         
-        this.level = new Level(
-            rows,
-            cols,
-            blockWidth,
-            blockHeight,
-            padding
-        );
+        this.level = new Level(rows, cols, blockWidth, blockHeight, padding,this.currentLevel);
         
         // Создаем платформу
-        const paddleX = (this.canvas.width - paddleWidth) / 2;
+        const paddleX = (this.canvas.width - gameConfig.paddle.paddleWidth) / 2;
         const paddleY = this.canvas.height - 50;
         
         this.paddle = new Paddle(paddleX, paddleY);
@@ -2626,7 +2598,7 @@ class Arcanoid extends BaseGame{
         this.ui.showAndHidePause(this.gamePause);
     }
 
-    updatePlayer() {
+    updatePaddle() {
         if (!this.paddle) return;
         
         // Движение платформы
@@ -2637,15 +2609,17 @@ class Arcanoid extends BaseGame{
             this.paddle.moveLeft();
         }
         
+        this.paddle.updateLastPosition();
+
         // Если мяч прикреплен к платформе, двигаем его вместе с платформой
-        if (this.ball && this.ball.isAttached) {
-            this.ball.x = this.paddle.x + this.paddle.sizeX / 2;
-            this.ball.y = this.paddle.y - this.ball.radius - 2;
+        if (this.mainBall && this.mainBall.isAttached) {
+            this.mainBall.x = this.paddle.x + this.paddle.sizeX / 2;
+            this.mainBall.y = this.paddle.y - this.mainBall.radius - 2;
         }
         
         // Запуск мяча по пробелу
-        if (this.input.isSpacePressed() && this.ball && this.ball.isAttached) {
-            this.ball.launch();
+        if (this.input.isSpacePressed() && this.mainBall && this.mainBall.isAttached) {
+            this.mainBall.launch();
         }
     }
 
@@ -2669,15 +2643,15 @@ class Arcanoid extends BaseGame{
             this.loseLife();
         }
     }
-    
+
     checkCollisions() {
-        if (!this.ball || !this.paddle) return;
+        if (!this.mainBall || !this.paddle) return;
         
         // Столкновение мяча с блоками
         for (const block of this.level.blocks) {
             if (block.isDestroyed) continue;
             
-            if (this.checkBallBlockCollision(this.ball, block)) {
+            if (this.checkBallBlockCollision(this.mainBall, block)) {
                 // Блок уничтожен или поврежден
                 if (block.isDestroyed) {
                     this.scoreManager.onBlockDestroy(block);
@@ -2687,7 +2661,7 @@ class Arcanoid extends BaseGame{
         }
         
         // Столкновение мяча с платформой
-        this.checkBallPaddleCollision(this.ball, this.paddle);
+        this.checkBallPaddleCollision(this.mainBall, this.paddle);
     }
     
     checkBallBlockCollision(ball, block) {
@@ -2720,21 +2694,32 @@ class Arcanoid extends BaseGame{
     }
     
     checkBallPaddleCollision(ball, paddle) {
+        // Проверка столкновения
         if (ball.y + ball.radius < paddle.y) return false;
         if (ball.x < paddle.x || ball.x > paddle.x + paddle.sizeX) return false;
         if (ball.dy < 0) return false; // мяч летит вверх — не сталкиваемся
         
-        // Вычисляем точку удара (-1 левый край, 0 центр, 1 правый край)
-        const hitPoint = (ball.x - (paddle.x + paddle.sizeX / 2)) / (paddle.sizeX / 2);
+        // Базовый отскок - инвертируем вертикальную скорость
+        ball.dy = -Math.abs(ball.dy); // Гарантируем движение вверх
         
-        // Угол отскока (максимум 60 градусов)
-        const maxAngle = Math.PI / 3;
-        const angle = hitPoint * maxAngle;
+        // Влияние движения платформы на мяч
+        const paddleDirection = paddle.getMovementDirection();
+        const influence = 2; // Сила влияния платформы (можно настроить)
         
-        const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-        ball.dx = speed * Math.sin(angle);
-        ball.dy = -speed * Math.cos(angle);
+        // Если платформа движется, добавляем импульс мячу
+        if (paddleDirection !== 0) {
+            ball.dx += paddleDirection * influence;
+        }
         
+        // Нормализация скорости мяча (чтобы не ускорялся бесконечно)
+        const targetSpeed = 8; // Базовая скорость мяча
+        const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+        
+        if (currentSpeed > 0) {
+            ball.dx = (ball.dx / currentSpeed) * targetSpeed;
+            ball.dy = (ball.dy / currentSpeed) * targetSpeed;
+        }
+            
         // Поднимаем мяч над платформой, чтобы не застрял
         ball.y = paddle.y - ball.radius;
         
@@ -2758,8 +2743,8 @@ class Arcanoid extends BaseGame{
             const ballX = this.canvas.width / 2;
             const ballY = this.paddle.y - ballRadius - 5;
             
-            this.ball = new Ball(ballX, ballY, ballRadius, ballSpeed);
-            this.balls = [this.ball];
+            this.mainBall = new Ball(ballX, ballY, ballRadius, ballSpeed);
+            this.balls = [this.mainBall];
         }
     }
     
@@ -2968,14 +2953,16 @@ import { gameConfig } from "../config.js";
 import { Block } from "../GameObjects/Entite.js";
 
 export class Level {
-    constructor(rows, cols, blockWidth, blockHeight, padding) {
+    constructor(rows, cols, blockWidth, blockHeight, padding, health) {
         this.blocks = [];
+        this.health = health //Временное свойство сложности
+
         this.canvasWidth = gameConfig.canvas.width;
         this.generate(rows, cols, blockWidth, blockHeight, padding);
     }
     
     generate(rows, cols, blockWidth, blockHeight, padding) {
-        const colors = ['#ff0000', '#ff8800', '#ffff00', '#00ff00', '#0088ff'];
+        const colors = ['#ff0000', '#ff8800', '#ffff00', '#00ff00', '#0004ffff'];
         const totalWidth = cols * blockWidth + (cols - 1) * padding;
         const offsetX = (this.canvasWidth - totalWidth) / 2;
         
@@ -2984,9 +2971,8 @@ export class Level {
                 const x = offsetX + col * (blockWidth + padding);
                 const y = 50 + row * (blockHeight + padding);
                 const color = colors[row % colors.length];
-                const health = 3;
                 
-                this.blocks.push(new Block(x, y, blockWidth, blockHeight, color, health));
+                this.blocks.push(new Block(x, y, blockWidth, blockHeight, color, this.health));
             }
         }
     }
@@ -3024,73 +3010,49 @@ export class ScoreManager {
 
 export class UIManager {
     constructor() {
-
-
         // Панели меню
         this.mainMenu = document.getElementById('main-menu');
         this.gameOverScreen = document.getElementById('game-over');
         this.pauseScreen = document.getElementById('game-pause');
 
-        // Элементы уведомлений
-        this.notifMultiplier = document.getElementById('notification-multiplier');
-        this.notifWave = document.getElementById('notification-wave');
+        // Уведомления
+        this.notifLevel = document.getElementById('notification-level');
         this.notifBonus = document.getElementById('notification-bonus');
-        // Внутренние span для текста
-        this.notifMultValue = document.getElementById('notif-mult-value');
-        this.notifWaveName = document.getElementById('notif-wave-name');
+        this.notifLevelValue = document.getElementById('notif-level-value');
         this.notifBonusName = document.getElementById('notif-bonus-name');
-
-        //Элементы панели статистики
-        this.panelHealthFill = document.getElementById('panel-health-fill');
-        this.panelWeaponSpeed = document.getElementById('panel-weapon-speed');
-        this.panelWeaponCount = document.getElementById('panel-weapon-count');
         
-        this.panelShieldStatus = document.getElementById('panel-shield-status');
+        // Элементы панели статистики
+        this.levelDisplay = document.getElementById('level-display');
+        this.livesDisplay = document.getElementById('lives-display');
         this.scoreDisplay = document.getElementById('score-display');
-        this.killsDisplay = document.getElementById('kills-display');
-        this.multiplierDisplay = document.getElementById('multiplier-display');
-        this.killsForNextDisplay = document.getElementById('killsForNext-display');
-        this.waveDisplay = document.getElementById('wave-display');
-        this.waveProgressDisplay = document.getElementById('wave-progress-display');
-
-
-
+        this.blocksDisplay = document.getElementById('blocks-display');
+        
         // Таймеры для автоматического скрытия
         this.hideTimers = {};
     }
-    
+        
+    // ========== УВЕДОМЛЕНИЯ ==========
     showNotification(element, duration = 2000) {
-        // Если уже показывается — сбрасываем таймер
         if (this.hideTimers[element.id]) {
             clearTimeout(this.hideTimers[element.id]);
         }
         
-        // Перезапускаем анимацию
         element.classList.remove('show', 'hidden');
-        // Форсируем reflow для перезапуска CSS-анимации
-        void element.offsetWidth;
+        void element.offsetWidth; // Форсируем reflow
         element.classList.add('show');
         
-        // Автоматически скрываем через duration
         this.hideTimers[element.id] = setTimeout(() => {
             element.classList.remove('show');
             element.classList.add('hidden');
             delete this.hideTimers[element.id];
         }, duration);
     }
-
-    showMultiplierNotification(multiplier) {
-        if (this.notifMultValue) {
-            this.notifMultValue.textContent = multiplier.toFixed(2);
-        }
-        this.showNotification(this.notifMultiplier, 2000);
-    }
     
-    showWaveNotification(waveName) {
-        if (this.notifWaveName) {
-            this.notifWaveName.textContent = waveName;
+    showLevelNotification(level) {
+        if (this.notifLevelValue) {
+            this.notifLevelValue.textContent = level;
         }
-        this.showNotification(this.notifWave, 2500);
+        this.showNotification(this.notifLevel, 2500);
     }
     
     showBonusNotification(bonusName) {
@@ -3099,80 +3061,28 @@ export class UIManager {
         }
         this.showNotification(this.notifBonus, 1500);
     }
-
+    
+    // ========== ОБНОВЛЕНИЕ СТАТИСТИКИ ==========
     updateScore(score) {
         if (this.scoreDisplay) this.scoreDisplay.textContent = score;
     }
     
-    updateKills(kills) {
-        if (this.killsDisplay) this.killsDisplay.textContent = kills;
+    updateLevelInfo(level, lives) {
+        if (this.levelDisplay) this.levelDisplay.textContent = level;
+        if (this.livesDisplay) this.livesDisplay.textContent = lives;
     }
     
-    updateMultiplier(multiplier, killsForNext) {
-        if (this.multiplierDisplay) {
-            this.multiplierDisplay.textContent = `x${multiplier.toFixed(2)}`;
-        }
-        if (this.killsForNextDisplay) {
-            this.killsForNextDisplay.textContent = `x${killsForNext.toFixed(0)}`;
-        }
-    }
-
-    updateWaveInfo(waveInfo) {
-        if (this.waveDisplay) {
-            this.waveDisplay.textContent = `Волна ${waveInfo.number}: ${waveInfo.name}`;
-        }
-        
-        if (this.waveProgressDisplay) {
-            this.waveProgressDisplay.textContent = `${waveInfo.killsInWave}/${waveInfo.killsNeeded}`;
-        }
+    updateBlocksDestroyed(count) {
+        if (this.blocksDisplay) this.blocksDisplay.textContent = count;
     }
     
-        // Новый метод обновления панели статов
-    updateStatsPanel(player) {
-        if (!player) return;
-
-        // Здоровье
-        const healthPercent = (player.playerHealth / 3) * 100;
-        if (this.panelHealthFill) {
-            this.panelHealthFill.style.width = `${healthPercent}%`;
-            
-            // Меняем цвет полоски в зависимости от здоровья
-            if (healthPercent > 70) this.panelHealthFill.style.background = '#00ff00';
-            else if (healthPercent > 40) this.panelHealthFill.style.background = '#ffff00';
-            else this.panelHealthFill.style.background = '#ff0000';
-        }
-
-        // Уровень оружия
-        if (this.panelWeaponSpeed) {
-            this.panelWeaponSpeed.textContent = `1 выстрел в ${(player.shootCooldown/1000)} сек`;
-        }
-        
-        // Уровень оружия
-        if (this.panelWeaponCount) {
-            this.panelWeaponCount.textContent = player.weaponBulletCount;
-        }
-
-        // Статус щита
-        if (this.panelShieldStatus) {
-            if (player.hasShield()) {
-                const timeLeft = Math.ceil((player.shield.expiresAt - Date.now()) / 1000);
-                const type = player.shield.isStrong ? '🔰 Крепкий' : '🛡️ Обычный';
-                this.panelShieldStatus.textContent = `${type} (${timeLeft}с)`;
-                this.panelShieldStatus.style.color = player.shield.isStrong ? '#8800ff' : '#00ffff';
-            } else {
-                this.panelShieldStatus.textContent = 'Нет';
-                this.panelShieldStatus.style.color = '#666';
-            }
-        }
-    }
-
-
-    updateAll(scoreManager) {
+    updateAll(scoreManager, level, lives, blocksDestroyed) {
         this.updateScore(scoreManager.score);
-        this.updateKills(scoreManager.kills);
-        this.updateMultiplier(scoreManager.multiplier, scoreManager.killsForNextMultiplier);
+        this.updateLevelInfo(level, lives);
+        this.updateBlocksDestroyed(blocksDestroyed);
     }
     
+    // ========== МЕНЮ ==========
     showMainMenu() {
         this.mainMenu.classList.remove('hidden');
     }
@@ -3188,9 +3098,13 @@ export class UIManager {
     hideGameOver() {
         this.gameOverScreen.classList.add('hidden');
     }
-
-    showAndHidePause(hide) {
-        hide == true? this.pauseScreen.classList.remove('hidden') : this.pauseScreen.classList.add('hidden');
+    
+    showAndHidePause(isPaused) {
+        if (isPaused) {
+            this.pauseScreen.classList.remove('hidden');
+        } else {
+            this.pauseScreen.classList.add('hidden');
+        }
     }
 
 }
@@ -3284,13 +3198,16 @@ import { gameConfig } from "../config.js";
 
 
 export class Paddle extends GameObject {
-    constructor(x, y) {
-        super(x, y, width, height);
-        this.height = gameConfig.paddle.paddleHeight; 
-        this.width = gameConfig.paddle.paddleWidth;
+    constructor(x, y, sizeX, sizeY) {
+        super(x, y, sizeX, sizeY);
+        this.sizeY = gameConfig.paddle.paddleHeight; 
+        this.sizeX = gameConfig.paddle.paddleWidth;
 
         this.canvasHeight = gameConfig.canvas.height;
         this.canvasWidth = gameConfig.canvas.width;
+
+        this.lastX = x; 
+
         this.speed = 8;
     }
     
@@ -3305,6 +3222,17 @@ export class Paddle extends GameObject {
             this.x = this.canvasWidth - this.sizeX;
         }
     }
+
+    // Определяем направление движения (-1 влево, 0 стоит, 1 вправо)
+    getMovementDirection() {
+        const diff = this.x - this.lastX;
+        if (Math.abs(diff) < 1) return 0; // Платформа стоит
+        return diff > 0 ? 1 : -1;
+    }
+
+    updateLastPosition() {
+        this.lastX = this.x;
+    }
     
     draw(ctx) {
         ctx.fillStyle = '#00d4ff';
@@ -3316,9 +3244,11 @@ export class Ball extends GameObject {
     constructor(x, y, radius, speed) {
         super(x, y, radius * 2, radius * 2);
         this.radius = radius;
-        this.dx = speed;
-        this.dy = -speed;
+        this.baseSpeed = speed;
+        this.dx = 0;
+        this.dy = 0;
         this.isAttached = true; // Мяч "прилип" к платформе в начале
+        this.isLost = false;
     }
     
     move() {
@@ -3326,6 +3256,23 @@ export class Ball extends GameObject {
         
         this.x += this.dx;
         this.y += this.dy;
+    }
+
+    launch() {
+        if (!this.isAttached) return;
+        this.isAttached = false;
+        
+        // Мяч летит строго вверх с небольшим случайным отклонением
+        // Отклонение от -2 до +2 пикселей по горизонтали
+        const randomOffset = (Math.random() - 0.5) * 4;
+        
+        this.dx = randomOffset;
+        this.dy = -this.baseSpeed;
+        
+        // Нормализуем скорость, чтобы она была одинаковой
+        const currentSpeed = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
+        this.dx = (this.dx / currentSpeed) * this.baseSpeed;
+        this.dy = (this.dy / currentSpeed) * this.baseSpeed;
     }
     
     // Отскок от стен
@@ -3357,6 +3304,7 @@ export class Block extends GameObject {
     constructor(x, y, width, height, color, health = 1) {
         super(x, y, width, height);
         this.color = color;
+        this.points = 5;
         this.health = health;
         this.maxHealth = health;
         this.isDestroyed = false;
@@ -3748,7 +3696,7 @@ export class BaseGame {
         if (!this.isRunning) return;
         
         const currentTime = Date.now();
-        const deltaTime = currentTime - this.lastFrameTime;
+        let deltaTime = currentTime - this.lastFrameTime;
 
         // Защита от скачка времени
         if (deltaTime > 100) deltaTime = 16;

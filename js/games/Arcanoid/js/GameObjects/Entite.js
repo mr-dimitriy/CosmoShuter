@@ -15,6 +15,7 @@ export class Paddle extends GameObject {
         this.lastX = x; 
 
         this.speed = 8;
+        this.velocity = 0;
     }
     
     moveLeft() {
@@ -36,7 +37,9 @@ export class Paddle extends GameObject {
         return diff > 0 ? 1 : -1;
     }
 
+    // Вычисляем скорость платформы
     updateLastPosition() {
+        this.velocity = this.x - this.lastX; // ← Скорость = изменение позиции
         this.lastX = this.x;
     }
     
@@ -50,8 +53,9 @@ export class Ball extends GameObject {
     constructor(x, y, radius, speed) {
         super(x, y, radius * 2, radius * 2);
         this.radius = radius;
-        this.dx = speed;
-        this.dy = -speed;
+        this.baseSpeed = speed;
+        this.dx = 0;
+        this.dy = 0;
         this.isAttached = true; // Мяч "прилип" к платформе в начале
         this.isLost = false;
     }
@@ -64,8 +68,20 @@ export class Ball extends GameObject {
     }
 
     launch() {
-        if(!this.isAttached)return;
+        if (!this.isAttached) return;
         this.isAttached = false;
+        
+        // Мяч летит строго вверх с небольшим случайным отклонением
+        // Отклонение от -2 до +2 пикселей по горизонтали
+        const randomOffset = (Math.random() - 0.5) * 4;
+        
+        this.dx = randomOffset;
+        this.dy = -this.baseSpeed;
+        
+        // Нормализуем скорость, чтобы она была одинаковой
+        const currentSpeed = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
+        this.dx = (this.dx / currentSpeed) * this.baseSpeed;
+        this.dy = (this.dy / currentSpeed) * this.baseSpeed;
     }
     
     // Отскок от стен
