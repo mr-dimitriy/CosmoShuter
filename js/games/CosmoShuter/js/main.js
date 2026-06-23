@@ -1,4 +1,6 @@
-import { InputHandler } from "./InputHandler.js";
+import { InputHandler } from '../../../common/InputHandler.js';
+import { BaseGame } from '../../../common/BaseGame.js';
+
 import { AssetLoader } from "./AssetLoader.js";
 import { EnemyFactory } from "./Factorys/EnemyFactory.js";
 import { ScoreManager } from "./Managers/ScoreManager.js";
@@ -11,14 +13,15 @@ import { gameConfig } from "./config.js";
 
 import { Bonus } from "./GameObjects/Bonus.js";
 
-class Game{
+class CosmoShuter extends BaseGame{
     constructor(){
+        super('gameCanvas');
         //Холст игры
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
+        // this.canvas = document.getElementById('gameCanvas');
+        // this.ctx = this.canvas.getContext('2d');
 
         // Менеджеры
-        this.input = new InputHandler();
+        this.input = new InputHandler(() => this.togglePause());
         this.scoreManager = new ScoreManager();
         this.ui = new UIManager();
         this.waveManager = new WaveManager();
@@ -39,23 +42,30 @@ class Game{
 
         // Загрузка ресурсов
         this.assetLoader = new AssetLoader();
+
+    }
+
+    // Реализуем метод init() из BaseGame
+    init() {
         this.assetLoader.loadAll(() => {
             this.enemyFactory = new EnemyFactory(this.assetLoader.spriteSheets);
             this.initStarfield();
             this.initUI();
+            
+            // Показываем главное меню
+            this.ui.showMainMenu();
         });
-
     }
 
     initUI() {
         const startBtn = document.getElementById('start-game-btn');
         const restartBtn = document.getElementById('restart-btn');
         const resumeBtn = document.getElementById('resume-btn');
+
         if (startBtn) {
             startBtn.addEventListener('click', () =>
                 {
                     this.startGame();
-                    this.ui.hideMainMenu();
                 });
                     
         }
@@ -63,14 +73,13 @@ class Game{
             restartBtn.addEventListener('click', () =>
                 {
                     this.startGame();
-                    this.ui.hideGameOver();
                 });
         }
 
         if (resumeBtn) {
             resumeBtn.addEventListener('click', () =>
                 {
-                    this.input.pauseKey = !this.input.pauseKey;
+                     this.togglePause();
                 });
         }
         
@@ -95,17 +104,17 @@ class Game{
         this.starfield.createNewStars(200);
     }
 
-
-
     startGame() {
         this.isGameOver = false;
+        this.gamePause = false;
         this.enemies = [];
         this.bullets = [];
         this.waveManager.reset();
         this.bonusManager.reset();
         this.lastFrameTime = Date.now();
-
+        this.lastSpawnTime = 0;
         this.scoreManager.reset();
+
         this.ui.hideMainMenu();
         this.ui.hideGameOver();
         this.ui.updateAll(this.scoreManager);
@@ -118,34 +127,14 @@ class Game{
             this.assetLoader.playerSprites
         );
 
-        this.gameLoop();
+        this.start();
     }    
-    
-    gameLoop() {
-        if (this.isGameOver) return; // Выходим из цикла
 
-        if(!this.gamePause){
-            this.update();
-            this.draw();
-        }
-        else{
-            this.updatePause();
-        }
-
-
-        requestAnimationFrame(() => this.gameLoop());
-    }
-    
     gameOver() {
-        if (this.enemySpawnInterval) {
-            clearInterval(this.enemySpawnInterval);
-        }
+        this.stop(); // Останавливаем игровой цикл через BaseGame
+        
         this.isGameOver = true;
-           
-        const gameOverScreen = document.getElementById('game-over');
-        if (gameOverScreen) {
-            gameOverScreen.classList.remove('hidden');
-        }
+        this.ui.showGameOver();
     }
 
     shouldSpawnEnemy() {
@@ -168,28 +157,28 @@ class Game{
     
     spawnEnemy() {
         const enemyTypeName = this.waveManager.getRandomEnemyType();
-        const enemy = this.enemyFactory.createByType(
-            enemyTypeName
-        );
+        const enemy = this.enemyFactory.createByType(enemyTypeName);
         
         if (enemy) {
             this.enemies.push(enemy);
         }
     }
 
-    update() {
-        const currentTime = Date.now();
-        const deltaTime = currentTime - this.lastFrameTime;
+    update(deltaTime) {
+        if (this.gamePause) {
+            this.updatePause();
+            return; // ← При паузе update не идёт дальше
+        }
+        // Обновляем звездное поле
+        if (this.starfield) {
+            this.starfield.update(deltaTime);
+        }
 
-        if (deltaTime > 100) deltaTime = 16; 
-        
-        this.lastFrameTime = currentTime;
-
-        this.starfield.update(deltaTime);
         // Обновляем менеджер волн и бонусов
         this.waveManager.update(deltaTime);
         this.bonusManager.update(deltaTime);
-        
+
+        //Проверка, собран ли бонус
         const collectedBonus = this.bonusManager.checkCollision(this.player);
         if (collectedBonus) {
             this.ui.showBonusNotification(collectedBonus);
@@ -199,22 +188,29 @@ class Game{
         if (this.shouldSpawnEnemy()) {
             this.spawnEnemy();
         }
-        this.updatePause();
 
         this.updatePlayer();
         this.updateEnemies();
         this.updateBullets();
         this.cleanup();
         this.checkCollisions();
+
+        this.ui.updateWaveInfo(this.waveManager.getWaveInfo());
+        this.ui.updateStatsPanel(this.player);
     }
 
     updatePause(){
-        this.gamePause = this.input.pauseKey;
         this.ui.showAndHidePause(this.gamePause);
-        this.lastFrameTime = Date.now();
+    }
+
+    togglePause() {
+        this.gamePause = !this.gamePause;
+        this.input.pauseKey = this.gamePause;
+        this.ui.showAndHidePause(this.gamePause);
     }
 
     updatePlayer() {
+        if (!this.player) return;
         this.player.currentDirection = this.input.getDirection();
         
         // Движение
@@ -223,7 +219,7 @@ class Game{
         if (this.input.isPressed('ArrowUp')) this.player.moveUp();
         if (this.input.isPressed('ArrowDown')) this.player.moveDown(this.canvas.height);
         
-        if (this.input.isShootPressed() && this.player.canShoot()) {
+        if (this.input.isSpacePressed() && this.player.canShoot()) {
             for (let i = 0; i < this.player.weaponBulletCount; i++) {
                 this.bullets.push(this.player.createBullet(i));
             }
@@ -260,25 +256,49 @@ class Game{
         this.ctx.fillStyle = '#050510';
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        this.starfield.draw(this.ctx);
+        // Рисуем звезды
+        if (this.starfield) {
+            this.starfield.draw(this.ctx);
+        }
 
         for (const enemy of this.enemies) {
             if (enemy.isLoaded){
                 enemy.draw(this.ctx);
             }
         }
-        this.player.draw(this.ctx);
+
+        if (this.player) {
+            this.player.draw(this.ctx);
+        }
 
         // Рисуем пули
         for (const bullet of this.bullets) {
             bullet.draw(this.ctx);
         }
+
         this.bonusManager.draw(this.ctx);
-        this.ui.updateWaveInfo(this.waveManager.getWaveInfo());
-        this.ui.updateStatsPanel(this.player);
     }
 
+    destroy() {
+        this.stop();
+        
+        // Очищаем интервалы
+        if (this.enemySpawnInterval) {
+            clearInterval(this.enemySpawnInterval);
+        }
+        
+        // Очищаем массивы
+        this.enemies = [];
+        this.bullets = [];
+        
+        console.log('CosmoShuter destroyed');
+    }
+
+
+
     checkCollisions() {
+        if (!this.player) return;
+
         const player = this.player;
 
         for (let j = this.enemies.length - 1; j >= 0; j--) {
@@ -347,7 +367,7 @@ class Game{
      
     // Метод обработки убийства
     onEnemyKilled(enemy) {
-        const points = this.scoreManager.onEnemyKilled(enemy.costPoint);
+        this.scoreManager.onEnemyKilled(enemy.costPoint);
         this.ui.updateAll(this.scoreManager);
         
         const isNextWave = this.waveManager.onEnemyKilled();
@@ -362,7 +382,8 @@ class Game{
 let game = null;
 
 document.addEventListener('DOMContentLoaded', () =>{
-    game = new Game();
+    game = new CosmoShuter();
+    game.init();
 
     // 2. Делаем игру доступной в консоли
     window.game = game;

@@ -26,7 +26,7 @@ export const gameConfig = {
                 { sx: 200, sy: 0, swidth: 42, sheight: 48 },
                 { sx: 242, sy: 0, swidth: 28, sheight: 56 }
             ],
-            speed: 1.8,
+            speed: 1.5,
             dy: 1,
             points: 5,
             health: 1,
@@ -41,7 +41,7 @@ export const gameConfig = {
                 { sx: 82, sy: 0, swidth: 58, sheight: 60 },
                 { sx: 140, sy: 0, swidth: 60, sheight: 56 }
             ],
-            speed: 1.4,
+            speed: 1.2,
             dy: 1,
             points: 10,
             health: 2,
@@ -55,7 +55,7 @@ export const gameConfig = {
                 { sx: 270, sy: 0, swidth: 56, sheight: 60 },
                 { sx: 326, sy: 0, swidth: 52, sheight: 60 } 
             ],
-            speed: 1,
+            speed: 0.8,
             dy: 1,
             points: 20,
             health: 4,
@@ -68,7 +68,7 @@ export const gameConfig = {
             sprites: [
                 { sx: 0, sy: 0, swidth: 197, sheight: 185 }
             ],
-            speed: 0.8,
+            speed: 0.6,
             dy: 1,
             points: 40,
             health: 10,

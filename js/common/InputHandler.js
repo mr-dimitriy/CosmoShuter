@@ -1,14 +1,16 @@
 export class InputHandler {
-    constructor() {
+    constructor(onPauseToggle) {
         this.keys = new Map();
-        this.pauseKey = false;
+        this.onPauseToggle = onPauseToggle;
         this.init();
     }
     
     init() {
         document.addEventListener('keydown', e => {
             if(e.key == 'Escape'){
-                this.pauseKey = !this.pauseKey;
+                if (this.onPauseToggle) {
+                    this.onPauseToggle();  // ← Вызываем callback
+                }
             }
             else if (!this.keys.get(e.key)) {
                 this.keys.set(e.key, e.key);
@@ -51,7 +53,7 @@ export class InputHandler {
                this.isPressed('ArrowRight');
     }
     
-    isShootPressed() {
+    isSpacePressed() {
         return this.isPressed(' ');
     }
 }

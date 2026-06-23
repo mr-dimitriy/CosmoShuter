@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Арканоид</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-wrapper">
+        <!-- Игровая область -->
+        <div id="game-area">
+            <canvas id="backgroundCanvas" width="1000" height="900"></canvas>
+            <canvas id="gameCanvas" width="1000" height="900"></canvas>
+            
+            <!-- Уведомления (оставляем только нужные) -->
+            <div id="notification-level" class="game-notification hidden">
+                Уровень <span id="notif-level-value">1</span>!
+            </div>
+            <div id="notification-bonus" class="game-notification hidden">
+                ✨ Получено: <span id="notif-bonus-name">Бонус</span>!
+            </div>
+            
+            <!-- Меню -->
+            <div id="main-menu" class="ui-panel">
+                <h1>Арканоид</h1>
+                <button id="start-game-btn">Новая игра</button>
+            </div>
+            <div id="game-over" class="ui-panel hidden">
+                <h1>Увы, вы проиграли 😢</h1>
+                <button id="restart-btn">Играть снова</button>
+            </div>
+            <div id="game-pause" class="ui-panel hidden">
+                <h1>Игра на паузе</h1>
+                <button id="resume-btn">Продолжить</button>
+            </div>
+        </div>
+        
+        <!-- Правая панель со статами -->
+        <aside id="stats-panel">
+            <h2>Статистика</h2>
+            
+            <div class="stat-block">
+                <span class="stat-label">Уровень: <span class="stat-value" id="level-display">1</span></span>
+            </div>
+            
+            <div class="stat-block">
+                <span class="stat-label">Жизни: <span class="stat-value" id="lives-display">3</span></span>
+            </div>
+            
+            <div class="stat-block">
+                <span class="stat-label">Счет: <span class="stat-value" id="score-display">0</span></span>
+            </div>
+            
+            <div class="stat-block">
+                <span class="stat-label">Разбито блоков: <span class="stat-value" id="blocks-display">0</span></span>
+            </div>
+            
+            <!-- Место для будущих бонусов -->
+            <div class="stat-block">
+                <span class="stat-label">Бонусы:</span>
+                <div id="active-bonuses" class="bonuses-list"></div>
+            </div>
+            
+            <div class="menu-section">
+                <!-- Место для будущего меню -->
+            </div>
+        </aside>
+    </div>
+    
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
