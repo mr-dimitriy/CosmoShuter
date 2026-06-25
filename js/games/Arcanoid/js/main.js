@@ -6,7 +6,7 @@ import { UIManager } from "./Managers/UIManager.js";
 import { Paddle, Ball } from './GameObjects/Entite.js';
 import { Level } from './Managers/LevelsManager.js';
 import { gameConfig } from "./config.js";
-
+import { BonusManager } from './Managers/BonusManager.js';
 
 class Arcanoid extends BaseGame{
     constructor(){
@@ -19,7 +19,7 @@ class Arcanoid extends BaseGame{
         this.input = new InputHandler(() => this.togglePause());
         this.scoreManager = new ScoreManager();
         this.ui = new UIManager();
-
+        this.bonusManager = new BonusManager();
         
         // Игровые сущности
         this.paddle = null;
@@ -78,21 +78,23 @@ class Arcanoid extends BaseGame{
         this.isGameOver = false;
         this.gamePause = false;
         this.currentLevel = 1;
-        this.lives = 3;
+        this.lives = 5;
         this.lastFrameTime = Date.now();
         this.balls = [];
 
         this.scoreManager.reset();
+        this.bonusManager.reset();
 
         this.ui.hideMainMenu();
         this.ui.hideGameOver();
+
         this.ui.updateAll(this.scoreManager);
 
-        this.initLevel();
+        this.initFirstLevel();
         this.start();
     }    
 
-    initLevel() {
+    initFirstLevel() {
 
         const levelsCount = gameConfig.levelMaps.length;
         const randomLevel = Math.floor(Math.random() * levelsCount);
@@ -111,9 +113,21 @@ class Arcanoid extends BaseGame{
         const ballX = this.canvas.width / 2;
         const ballY = paddleY - ballRadius - 5;
         
-        this.mainBall = new Ball(ballX, ballY, ballRadius, ballSpeed);
-        this.balls = [this.mainBall];
+        const newBall = new Ball(ballX, ballY, ballRadius, ballSpeed);
+        this.balls = [newBall]; // Массив с одним мячом
         
+        this.ui.updateLevelInfo(this.currentLevel, this.lives);
+    }
+
+    initLevel() {
+
+        const levelsCount = gameConfig.levelMaps.length;
+        const randomLevel = Math.floor(Math.random() * levelsCount);
+
+        this.level = new Level(gameConfig.levelMaps[randomLevel]);
+
+        this.bonusManager.activeBonuses = [];
+
         this.ui.updateLevelInfo(this.currentLevel, this.lives);
     }
     
@@ -137,7 +151,17 @@ class Arcanoid extends BaseGame{
         
         // Проверяем столкновения
         this.checkCollisions();
+
+        this.bonusManager.update(deltaTime);
         
+        // Проверяем сбор бонусов
+        const collectedBonus = this.bonusManager.checkCollision(this);
+        if (collectedBonus) {
+            this.ui.showBonusNotification(collectedBonus);
+        }
+
+        this.bonusManager.updateActiveEffects(this);
+
         // Проверяем завершение уровня
         if (this.level.isCleared()) {
             this.nextLevel();
@@ -169,15 +193,33 @@ class Arcanoid extends BaseGame{
         
         this.paddle.updateLastPosition();
 
-        // Если мяч прикреплен к платформе, двигаем его вместе с платформой
-        if (this.mainBall && this.mainBall.isAttached) {
-            this.mainBall.x = this.paddle.x + this.paddle.sizeX / 2;
-            this.mainBall.y = this.paddle.y - this.mainBall.radius - 2;
+        // // Если мяч прикреплен к платформе, двигаем его вместе с платформой
+        // if (this.mainBall && this.mainBall.isAttached) {
+        //     this.mainBall.x = this.paddle.x + this.paddle.sizeX / 2;
+        //     this.mainBall.y = this.paddle.y - this.mainBall.radius - 2;
+        //     this.mainBall.paddle = this.paddle;
+        // }
+        
+        // // Запуск мяча по пробелу
+        // if (this.input.isSpacePressed() && this.mainBall && this.mainBall.isAttached) {
+        //     this.mainBall.launch();
+        // }
+
+        // Если есть мячи, прикрепленные к платформе, двигаем их вместе
+        for (const ball of this.balls) {
+            if (ball.isAttached) {
+                ball.x = this.paddle.x + this.paddle.sizeX / 2;
+                ball.y = this.paddle.y - ball.radius - 2;
+            }
         }
         
-        // Запуск мяча по пробелу
-        if (this.input.isSpacePressed() && this.mainBall && this.mainBall.isAttached) {
-            this.mainBall.launch();
+        // Запуск мяча по пробелу (запускаем все прикрепленные мячи)
+        if (this.input.isSpacePressed()) {
+            for (const ball of this.balls) {
+                if (ball.isAttached) {
+                    ball.launch();
+                }
+            }
         }
     }
 
@@ -189,7 +231,7 @@ class Arcanoid extends BaseGame{
             const ballLost = ball.checkWallCollision(this.canvas.width, this.canvas.height);
             
             if (ballLost) {
-                this.onBallLost(ball);
+                ball.isLost = true;
             }
         }
         
@@ -203,23 +245,25 @@ class Arcanoid extends BaseGame{
     }
 
     checkCollisions() {
-        if (!this.mainBall || !this.paddle) return;
+        if (this.balls.length === 0 || !this.paddle) return;
         
-        // Столкновение мяча с блоками
-        for (const block of this.level.blocks) {
-            if (block.isDestroyed) continue;
-            
-            if (this.checkBallBlockCollision(this.mainBall, block)) {
-                // Блок уничтожен или поврежден
-                if (block.isDestroyed) {
-                    this.scoreManager.onBlockDestroy(block);
+        // Проверяем столкновения для ВСЕХ мячей
+        for (const ball of this.balls) {
+            // Столкновение с блоками
+            for (const block of this.level.blocks) {
+                if (block.isDestroyed) continue;
+                
+                if (this.checkBallBlockCollision(ball, block)) {
+                    if (block.isDestroyed) {
+                        this.scoreManager.onBlockDestroy(block, this.bonusManager);
+                    }
+                    break;
                 }
-                break; // Обрабатываем только одно столкновение за кадр
             }
+            
+            // Столкновение с платформой
+            this.checkBallPaddleCollision(ball, this.paddle);
         }
-        
-        // Столкновение мяча с платформой
-        this.checkBallPaddleCollision(this.mainBall, this.paddle);
     }
     
     checkBallBlockCollision(ball, block) {
@@ -232,20 +276,36 @@ class Arcanoid extends BaseGame{
             ball.y - ball.radius > block.y + block.sizeY) {
             return false;
         }
+
+        // Используем предыдущую позицию мяча для определения стороны удара
+        const prevX = ball.x - ball.dx;
+        const prevY = ball.y - ball.dy;
         
-        // Определяем сторону удара
-        const overlapLeft = (ball.x + ball.radius) - block.x;
-        const overlapRight = (block.x + block.sizeX) - (ball.x - ball.radius);
-        const overlapTop = (ball.y + ball.radius) - block.y;
-        const overlapBottom = (block.y + block.sizeY) - (ball.y - ball.radius);
+        // Проверяем, с какой стороны мяч НЕ пересекался в предыдущем кадре
+        const wasOutsideLeft = prevX + ball.radius < block.x;
+        const wasOutsideRight = prevX - ball.radius > block.x + block.sizeX;
+        const wasOutsideTop = prevY + ball.radius < block.y;
+        const wasOutsideBottom = prevY - ball.radius > block.y + block.sizeY;
         
-        const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
-        
-        // Отражаем мяч в зависимости от стороны
-        if (minOverlap === overlapLeft || minOverlap === overlapRight) {
-            ball.dx = -ball.dx;
+        // Определяем сторону удара на основе предыдущей позиции
+        if (wasOutsideLeft || wasOutsideRight) {
+            ball.dx = -ball.dx; // Удар сбоку
+        } else if (wasOutsideTop || wasOutsideBottom) {
+            ball.dy = -ball.dy; // Удар сверху/снизу
         } else {
-            ball.dy = -ball.dy;
+            // Если мяч был внутри блока (туннелирование), используем минимальное перекрытие
+            const overlapLeft = (ball.x + ball.radius) - block.x;
+            const overlapRight = (block.x + block.sizeX) - (ball.x - ball.radius);
+            const overlapTop = (ball.y + ball.radius) - block.y;
+            const overlapBottom = (block.y + block.sizeY) - (ball.y - ball.radius);
+            
+            const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+            
+            if (minOverlap === overlapLeft || minOverlap === overlapRight) {
+                ball.dx = -ball.dx;
+            } else {
+                ball.dy = -ball.dy;
+            }
         }
         
         return block.takeDamage();
@@ -257,44 +317,40 @@ class Arcanoid extends BaseGame{
         if (ball.x < paddle.x || ball.x > paddle.x + paddle.sizeX) return false;
         if (ball.dy < 0) return false; // мяч летит вверх — не сталкиваемся
         
+        // Используем предыдущую позицию для определения момента столкновения
+        const prevY = ball.y - ball.dy;
+        
+        // Если в предыдущем кадре мяч был выше платформы, значит столкновение только что произошло
+        if (prevY + ball.radius <= paddle.y) {
+            // Мяч только что коснулся платформы — корректируем позицию плавно
+            ball.y = paddle.y - ball.radius;
+        } else {
+            // Мяч уже внутри/под платформой (туннелирование) — вычисляем точку столкновения
+            // Интерполируем позицию между предыдущим и текущим кадром
+            const penetration = (ball.y + ball.radius) - paddle.y;
+            ball.y = paddle.y - ball.radius - penetration * 0.5; // Выталкиваем на половину проникновения
+        }
+        
         // Базовый отскок - инвертируем вертикальную скорость
         ball.dy = -Math.abs(ball.dy); // Гарантируем движение вверх
-    
-        // Вычисляем точку удара (-1 левый край, 0 центр, 1 правый край)
-        const hitPoint = (ball.x - (paddle.x + paddle.sizeX / 2)) / (paddle.sizeX / 2);
         
-        // Угол отскока от точки удара (максимум 60 градусов)
-        const maxAngle = Math.PI / 3;
-        const angle = hitPoint * maxAngle;
+        // 🎯 Влияние движения платформы на мяч
+        const paddleVelocity = paddle.velocity || 0;
+        const influence = 0.5; // Коэффициент влияния (0-1, чем больше — тем сильнее влияние)
         
-        // Влияние движения платформы на мяч
-        const platformInfluence = 0.4; // Коэффициент влияния (0-1)
-        const platformVelocity = paddle.velocity || 0;
-        
-        // Добавляем скорость платформы к горизонтальной скорости мяча
-        ball.dx += platformVelocity * platformInfluence;
-        
-        // Добавляем угол от точки удара
-        const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-        ball.dx += currentSpeed * Math.sin(angle) * 0.3;
+        // Добавляем часть скорости платформы к горизонтальной скорости мяча
+        ball.dx += paddleVelocity * influence;
         
         // Нормализация скорости мяча (чтобы не ускорялся бесконечно)
         const targetSpeed = 8; // Базовая скорость мяча
-        const finalSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+        const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
         
-        if (finalSpeed > 0) {
-            ball.dx = (ball.dx / finalSpeed) * targetSpeed;
-            ball.dy = (ball.dy / finalSpeed) * targetSpeed;
+        if (currentSpeed > 0) {
+            ball.dx = (ball.dx / currentSpeed) * targetSpeed;
+            ball.dy = (ball.dy / currentSpeed) * targetSpeed;
         }
         
-        // Поднимаем мяч над платформой, чтобы не застрял
-        ball.y = paddle.y - ball.radius;
-        
         return true;
-    }
-    
-    onBallLost(ball) {
-        ball.isLost = true;
     }
     
     loseLife() {
@@ -304,14 +360,14 @@ class Arcanoid extends BaseGame{
         if (this.lives <= 0) {
             this.gameOver();
         } else {
-            // Сбрасываем мяч на платформу
+            // Создаем ОДИН новый мяч
             const ballRadius = 8;
-            const ballSpeed = 5;
+            const ballSpeed = 8;
             const ballX = this.canvas.width / 2;
             const ballY = this.paddle.y - ballRadius - 5;
             
-            this.mainBall = new Ball(ballX, ballY, ballRadius, ballSpeed);
-            this.balls = [this.mainBall];
+            const newBall = new Ball(ballX, ballY, ballRadius, ballSpeed);
+            this.balls = [newBall]; // Очищаем массив и добавляем новый мяч
         }
     }
     
@@ -336,6 +392,11 @@ class Arcanoid extends BaseGame{
         // Рисуем платформу
         if (this.paddle) {
             this.paddle.draw(this.ctx);
+        }
+
+        // Рисуем платформу
+        if (this.bonusManager) {
+            this.bonusManager.draw(this.ctx);
         }
         
         // Рисуем мячи
@@ -362,8 +423,8 @@ document.addEventListener('DOMContentLoaded', () =>{
 
 
         // 3. Добавляем функцию отладки, которая работает с ЭТИМ экземпляром
-    window.debug = (type = '') => {
-
+    window.debug = (rows, cols, padding, health) => {
+        game.level.generateDebug(rows, cols, padding, health);
     };
 });
     

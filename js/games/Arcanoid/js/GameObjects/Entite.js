@@ -14,7 +14,7 @@ export class Paddle extends GameObject {
 
         this.lastX = x; 
 
-        this.speed = 8;
+        this.speed = gameConfig.paddle.speed;
         this.velocity = 0;
     }
     
@@ -28,13 +28,6 @@ export class Paddle extends GameObject {
         if (this.x + this.sizeX > this.canvasWidth) {
             this.x = this.canvasWidth - this.sizeX;
         }
-    }
-
-    // Определяем направление движения (-1 влево, 0 стоит, 1 вправо)
-    getMovementDirection() {
-        const diff = this.x - this.lastX;
-        if (Math.abs(diff) < 1) return 0; // Платформа стоит
-        return diff > 0 ? 1 : -1;
     }
 
     // Вычисляем скорость платформы
@@ -58,11 +51,17 @@ export class Ball extends GameObject {
         this.dy = 0;
         this.isAttached = true; // Мяч "прилип" к платформе в начале
         this.isLost = false;
+        this.paddle = null;
+
+        this.prevX = x;
+        this.prevY = y;
     }
     
     move() {
         if (this.isAttached) return; // Ждём запуска
-        
+        this.prevX = this.x;
+        this.prevY = this.y;
+
         this.x += this.dx;
         this.y += this.dy;
     }
@@ -70,12 +69,19 @@ export class Ball extends GameObject {
     launch() {
         if (!this.isAttached) return;
         this.isAttached = false;
+
+        // Получаем направление платформы в момент запуска
+        const paddleDirection = this.paddle ? this.paddle.velocity : 0;
+
+        console.log(paddleDirection);
+        // Если платформа движется — используем это, иначе небольшое случайное отклонение
+        if (paddleDirection !== 0) {
+            this.dx = paddleDirection * 2; // Влияние платформы
+        } else {
+            this.dx = 0; // Случайное отклонение
+        }
         
-        // Мяч летит строго вверх с небольшим случайным отклонением
-        // Отклонение от -2 до +2 пикселей по горизонтали
-        const randomOffset = (Math.random() - 0.5) * 4;
-        
-        this.dx = randomOffset;
+
         this.dy = -this.baseSpeed;
         
         // Нормализуем скорость, чтобы она была одинаковой
@@ -117,6 +123,7 @@ export class Block extends GameObject {
         this.health = health;
         this.maxHealth = health;
         this.isDestroyed = false;
+        this.radius = 5;
     }
     
     takeDamage() {
@@ -135,12 +142,15 @@ export class Block extends GameObject {
         const alpha = this.health / this.maxHealth;
         ctx.fillStyle = this.color;
         ctx.globalAlpha = 0.3 + (alpha * 0.7);
-        ctx.fillRect(this.x, this.y, this.sizeX, this.sizeY);
+        ctx.beginPath();
+        ctx.roundRect(this.x, this.y, this.sizeX, this.sizeY, this.radius);
+        ctx.fill();
+
         ctx.globalAlpha = 1;
         
         // Рамка
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 1;
-        ctx.strokeRect(this.x, this.y, this.sizeX, this.sizeY);
+        ctx.stroke(); 
     }
 }

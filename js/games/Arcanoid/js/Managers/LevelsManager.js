@@ -35,6 +35,27 @@ export class Level {
             }
         }
     }
+
+    generateDebug(rows, cols, padding, health) {
+        this.blocks = [];
+        const blockWidth = 80;
+        const blockHeight = 30;
+
+        const colors = ['#ff0000', '#ff8800', '#ffff00', '#00ff00', '#0004ffff', '#7700ffff', '#2f0164ff'];
+        const totalWidth = cols * blockWidth + (cols - 1) * padding;
+        const offsetX = (this.canvasWidth - totalWidth) / 2;
+        
+        for (let row = 0; row < rows; row++) {
+            
+            for (let col = 0; col < cols; col++) {
+
+                const x = offsetX + col * (blockWidth + padding);
+                const y = 50 + row * (blockHeight + padding);
+                
+                this.blocks.push(new Block(x, y, blockWidth, blockHeight, colors[1], health));
+            }
+        }
+    }
     
     isCleared() {
         return this.blocks.every(b => b.isDestroyed);

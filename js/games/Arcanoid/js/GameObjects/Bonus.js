@@ -1,13 +1,15 @@
 import { GameObject } from "./GameObject.js";
 
 export class Bonus extends GameObject {
-    constructor(x, y, type) {
-        super(x, y, 20, 20); // Размер бонуса 30x30
+    constructor(x, y, type, duration) {
+        super(x, y, 20, 20);
         
         this.type = type; // 'health', 'fullHealth', 'fireRate', 'multiShot', 'shield', 'strongShield'
         this.speed = 2; // Скорость падения
         this.lifetime = 10000; // Бонус исчезает через 10 секунд
         this.lifetimeElapsed = 0;
+        this.radius = 20;
+        this.duration = duration;
 
         // Настройка внешнего вида в зависимости от типа
         this.setupAppearance();
@@ -20,35 +22,23 @@ export class Bonus extends GameObject {
                 this.symbol = '❤️';
                 this.name = 'Здоровье';
                 break;
-            case 'fullHealth':
-                this.color = '#ff00ff';
-                this.symbol = '💟';
-                this.name = 'Полное здоровье';
+
+            case 'sizeUp':
+                this.color = '#00ff00';
+                this.symbol = '📏';
+                this.name = 'Платформа длиннее';
                 break;
-            case 'fireRate':
-                this.color = '#ffff00';
-                this.symbol = '⚡';
-                this.name = 'Скорострельность';
+
+            case 'threeBalls':
+                this.color = '#00ff00';
+                this.symbol = '🎱';
+                this.name = 'х2 мячей';
                 break;
-            case 'multiShot':
-                this.color = '#ff8800';
-                this.symbol = '🔗';
-                this.name = 'Мульти-выстрел';
-                break;
-            case 'shield':
-                this.color = '#00ffff';
-                this.symbol = '🛡️';
-                this.name = 'Щит';
-                break;
-            case 'strongShield':
-                this.color = '#8800ff';
-                this.symbol = '🔰';
-                this.name = 'Крепкий щит';
-                break;
-            case 'speed':
-                this.color = '#ecff95ff';
+
+            case 'speedUp':
+                this.color = '#00ff00';
                 this.symbol = '🚀';
-                this.name = 'Ускорение';
+                this.name = 'Платформа быстрее';
                 break;
         }
     }
@@ -68,13 +58,16 @@ export class Bonus extends GameObject {
     
     draw(ctx) {
         // Рисуем фон
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.sizeX, this.sizeY);
-        
-        // Рисуем символ
-        ctx.font = '20px Arial';
+        //ctx.fillStyle = this.color;
+        ctx.fillStyle = '#1d1d1dff';
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.font = '16px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(this.symbol, this.x + this.sizeX / 2, this.y + this.sizeY / 2);
+        ctx.fillText(this.symbol, this.x, this.y);
     }
 }

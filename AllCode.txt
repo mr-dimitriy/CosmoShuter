@@ -2421,19 +2421,467 @@ export const gameConfig = {
     blocksType: [
         {
             name: 'simple',
-            sizeWidth: 6,
-            sizeHeight: 3,
+            sizeWidth: 80,
+            sizeHeight: 30,
             points: 5
         }
     ],
 
-    // bonusType: [
-    //     {
-    //         name: 'simple',
-    //         sizeWidth: 6,
-    //         sizeHeight: 3
-    //     }
-    // ],
+    bonusTypes: [
+        { type: 'sizeUp', weight: 25 },
+        { type: 'threeBalls', weight: 20 },
+        //{ type: 'slowSpeedBall', weight: 20 },
+        { type: 'speedUp', weight: 25 },
+        { type: 'health', weight: 30 },
+    ],
+
+    bonusRate: 0.2,
+
+    levelMaps: [
+        // Уровень 1 - Простой старт
+        {
+            rows: 3,
+            cols: 10,
+            padding: 8,
+            map: [
+                "3333333333",
+                "1111111111",
+                "2222222222"
+            ]
+        },
+        // Уровень 2 - С промежутками
+        {
+            rows: 4,
+            cols: 10,
+            padding: 8,
+            map: [
+                "1111111111",
+                "1001100111",
+                "1111111111",
+                "1001100111"
+            ]
+        },
+        // Уровень 3 - Шахматка
+        {
+            rows: 5,
+            cols: 10,
+            padding: 8,
+            map: [
+                "1010101010",
+                "0101010101",
+                "1010101010",
+                "0101010101",
+                "1010101010"
+            ]
+        },
+        // Уровень 4 - Пирамида
+        {
+            rows: 5,
+            cols: 11,
+            padding: 8,
+            map: [
+                "00000100000",
+                "00001110000",
+                "00011111000",
+                "00111111100",
+                "01111111110"
+            ]
+        },
+        // Уровень 5 - Рамка
+        {
+            rows: 6,
+            cols: 10,
+            padding: 8,
+            map: [
+                "1111111111",
+                "1000000001",
+                "1011111101",
+                "1010010101",
+                "1000000001",
+                "1111111111"
+            ]
+        },
+        // Уровень 6 - Волна
+        {
+            rows: 5,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "01111111110",
+                "00111111100",
+                "01111111110",
+                "11111111111"
+            ]
+        },
+        // Уровень 7 - Крест
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "00001000000",
+                "00001000000",
+                "00001000000",
+                "22222222222",
+                "00001000000",
+                "00001000000",
+                "00001000000"
+            ]
+        },
+        // Уровень 8 - Двойные ряды
+        {
+            rows: 6,
+            cols: 10,
+            padding: 8,
+            map: [
+                "1111111111",
+                "1111111111",
+                "0000000000",
+                "1111111111",
+                "1111111111",
+                "0000000000"
+            ]
+        },
+        // Уровень 9 - Диагональ
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "30000000003",
+                "03000000030",
+                "00300000300",
+                "00030003000",
+                "00003030000",
+                "00000300000"
+            ]
+        },
+        // Уровень 10 - Частокол
+        {
+            rows: 5,
+            cols: 11,
+            padding: 8,
+            map: [
+                "10101010101",
+                "10101010101",
+                "10101010101",
+                "10101010101",
+                "10101010101"
+            ]
+        },
+        // Уровень 11 - Концентрические круги (квадраты)
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "10000000001",
+                "10111111101",
+                "10100010101",
+                "10111111101",
+                "10000000001",
+                "11111111111"
+            ]
+        },
+        // Уровень 12 - Лестница
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "10000000000",
+                "22000000000",
+                "33300000000",
+                "44440000000",
+                "55555000000",
+                "66666600000"
+            ]
+        },
+        // Уровень 13 - Обратная лестница
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "00000666666",
+                "00000055555",
+                "00000004444",
+                "00000000333",
+                "00000000022",
+                "00000000001"
+            ]
+        },
+        // Уровень 14 - Туннель
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "222222222222",
+                "20000000002",
+                "20000000002",
+                "20000000002",
+                "20000000002",
+                "20000000002",
+                "222222222222"
+            ]
+        },
+        // Уровень 15 - Сетка
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "10000000001",
+                "10111111101",
+                "10100000101",
+                "10111111101",
+                "10000000001",
+                "11111111111"
+            ]
+        },
+        // Уровень 16 - Песочные часы
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "01111111110",
+                "00222222200",
+                "00033333000",
+                "00222222200",
+                "01111111110",
+                "11111111111"
+            ]
+        },
+        // Уровень 17 - Зигзаг
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111000000",
+                "00000111110",
+                "00000011111",
+                "11111000000",
+                "01111100000",
+                "00000111110"
+            ]
+        },
+        // Уровень 18 - Алмаз
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "00001000000",
+                "00011100000",
+                "00111110000",
+                "01111111000",
+                "00111110000",
+                "00011100000",
+                "00001000000"
+            ]
+        },
+        // Уровень 19 - Двойная рамка
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "11111111111",
+                "11000000011",
+                "11000000011",
+                "11000000011",
+                "11111111111",
+                "11111111111"
+            ]
+        },
+        // Уровень 20 - Мост
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11000000011",
+                "11000000011",
+                "11111111111",
+                "00111111000",
+                "00011100000",
+                "00001000000"
+            ]
+        },
+        // Уровень 21 - Каскад
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "01111111110",
+                "00111111100",
+                "00011111000",
+                "00001110000",
+                "00000100000"
+            ]
+        },
+        // Уровень 22 - Бабочка
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "10001110001",
+                "11001110011",
+                "11111111111",
+                "01111111110",
+                "00111111100",
+                "00011111000",
+                "00001110000"
+            ]
+        },
+        // Уровень 23 - Спираль
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "10000000001",
+                "10111111101",
+                "10100000101",
+                "10101110101",
+                "10100000101",
+                "11111111111"
+            ]
+        },
+        // Уровень 24 - Полосы
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "00000000000",
+                "11111111111",
+                "00000000000",
+                "11111111111",
+                "00000000000",
+                "11111111111"
+            ]
+        },
+        // Уровень 25 - Вертикальные полосы
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "10101010101",
+                "10101010101",
+                "10101010101",
+                "10101010101",
+                "10101010101",
+                "10101010101",
+                "10101010101"
+            ]
+        },
+        // Уровень 26 - Замок
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "10000000001",
+                "10111111101",
+                "10100000101",
+                "10101110101",
+                "10100000101",
+                "10111111101",
+                "11111111111"
+            ]
+        },
+        // Уровень 27 - Треугольники
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11100000111",
+                "11110001111",
+                "11111011111",
+                "11111111111",
+                "01111111110",
+                "00111111100"
+            ]
+        },
+        // Уровень 28 - Лабиринт
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "10001000101",
+                "10101010101",
+                "10100010001",
+                "10111010111",
+                "10000000001",
+                "11111111111"
+            ]
+        },
+        // Уровень 29 - Сердце
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "00110001100",
+                "01111011110",
+                "11111111111",
+                "11111111111",
+                "01111111110",
+                "00111111100",
+                "00011111000"
+            ]
+        },
+        // Уровень 30
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "10101010101",
+                "10111111101",
+                "10100000101",
+                "10111111101",
+                "10101010101",
+                "11111111111"
+            ]
+        },
+        // Уровень 31
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "10000000001",
+                "10101010101",
+                "10000000001",
+                "10101010101",
+                "10000000001",
+                "11111111111"
+            ]
+        }
+    ]
+
+
 };
 
 // ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\main.js =====
@@ -2470,7 +2918,7 @@ class Arcanoid extends BaseGame{
         this.isGameOver = false;
         this.gamePause = false;
         this.currentLevel = 1;
-        this.lives = 3;
+        this.lives = 5;
         this.lastFrameTime = Date.now();
 
 
@@ -2517,7 +2965,7 @@ class Arcanoid extends BaseGame{
         this.isGameOver = false;
         this.gamePause = false;
         this.currentLevel = 1;
-        this.lives = 3;
+        this.lives = 5;
         this.lastFrameTime = Date.now();
         this.balls = [];
 
@@ -2532,14 +2980,11 @@ class Arcanoid extends BaseGame{
     }    
 
     initLevel() {
-        // Создаем уровень с блоками
-        const rows = 5;
-        const cols = 10;
-        const blockWidth = 80;
-        const blockHeight = 30;
-        const padding = 10;
-        
-        this.level = new Level(rows, cols, blockWidth, blockHeight, padding,this.currentLevel);
+
+        const levelsCount = gameConfig.levelMaps.length;
+        const randomLevel = Math.floor(Math.random() * levelsCount);
+
+        this.level = new Level(gameConfig.levelMaps[randomLevel]);
         
         // Создаем платформу
         const paddleX = (this.canvas.width - gameConfig.paddle.paddleWidth) / 2;
@@ -2549,7 +2994,7 @@ class Arcanoid extends BaseGame{
         
         // Создаем мяч
         const ballRadius = 8;
-        const ballSpeed = 5;
+        const ballSpeed = 8;
         const ballX = this.canvas.width / 2;
         const ballY = paddleY - ballRadius - 5;
         
@@ -2615,6 +3060,7 @@ class Arcanoid extends BaseGame{
         if (this.mainBall && this.mainBall.isAttached) {
             this.mainBall.x = this.paddle.x + this.paddle.sizeX / 2;
             this.mainBall.y = this.paddle.y - this.mainBall.radius - 2;
+            this.mainBall.paddle = this.paddle;
         }
         
         // Запуск мяча по пробелу
@@ -2674,20 +3120,36 @@ class Arcanoid extends BaseGame{
             ball.y - ball.radius > block.y + block.sizeY) {
             return false;
         }
+
+        // Используем предыдущую позицию мяча для определения стороны удара
+        const prevX = ball.x - ball.dx;
+        const prevY = ball.y - ball.dy;
         
-        // Определяем сторону удара
-        const overlapLeft = (ball.x + ball.radius) - block.x;
-        const overlapRight = (block.x + block.sizeX) - (ball.x - ball.radius);
-        const overlapTop = (ball.y + ball.radius) - block.y;
-        const overlapBottom = (block.y + block.sizeY) - (ball.y - ball.radius);
+        // Проверяем, с какой стороны мяч НЕ пересекался в предыдущем кадре
+        const wasOutsideLeft = prevX + ball.radius < block.x;
+        const wasOutsideRight = prevX - ball.radius > block.x + block.sizeX;
+        const wasOutsideTop = prevY + ball.radius < block.y;
+        const wasOutsideBottom = prevY - ball.radius > block.y + block.sizeY;
         
-        const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
-        
-        // Отражаем мяч в зависимости от стороны
-        if (minOverlap === overlapLeft || minOverlap === overlapRight) {
-            ball.dx = -ball.dx;
+        // Определяем сторону удара на основе предыдущей позиции
+        if (wasOutsideLeft || wasOutsideRight) {
+            ball.dx = -ball.dx; // Удар сбоку
+        } else if (wasOutsideTop || wasOutsideBottom) {
+            ball.dy = -ball.dy; // Удар сверху/снизу
         } else {
-            ball.dy = -ball.dy;
+            // Если мяч был внутри блока (туннелирование), используем минимальное перекрытие
+            const overlapLeft = (ball.x + ball.radius) - block.x;
+            const overlapRight = (block.x + block.sizeX) - (ball.x - ball.radius);
+            const overlapTop = (ball.y + ball.radius) - block.y;
+            const overlapBottom = (block.y + block.sizeY) - (ball.y - ball.radius);
+            
+            const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+            
+            if (minOverlap === overlapLeft || minOverlap === overlapRight) {
+                ball.dx = -ball.dx;
+            } else {
+                ball.dy = -ball.dy;
+            }
         }
         
         return block.takeDamage();
@@ -2699,17 +3161,29 @@ class Arcanoid extends BaseGame{
         if (ball.x < paddle.x || ball.x > paddle.x + paddle.sizeX) return false;
         if (ball.dy < 0) return false; // мяч летит вверх — не сталкиваемся
         
+        // Используем предыдущую позицию для определения момента столкновения
+        const prevY = ball.y - ball.dy;
+        
+        // Если в предыдущем кадре мяч был выше платформы, значит столкновение только что произошло
+        if (prevY + ball.radius <= paddle.y) {
+            // Мяч только что коснулся платформы — корректируем позицию плавно
+            ball.y = paddle.y - ball.radius;
+        } else {
+            // Мяч уже внутри/под платформой (туннелирование) — вычисляем точку столкновения
+            // Интерполируем позицию между предыдущим и текущим кадром
+            const penetration = (ball.y + ball.radius) - paddle.y;
+            ball.y = paddle.y - ball.radius - penetration * 0.5; // Выталкиваем на половину проникновения
+        }
+        
         // Базовый отскок - инвертируем вертикальную скорость
         ball.dy = -Math.abs(ball.dy); // Гарантируем движение вверх
         
-        // Влияние движения платформы на мяч
-        const paddleDirection = paddle.getMovementDirection();
-        const influence = 2; // Сила влияния платформы (можно настроить)
+        // 🎯 Влияние движения платформы на мяч
+        const paddleVelocity = paddle.velocity || 0;
+        const influence = 0.5; // Коэффициент влияния (0-1, чем больше — тем сильнее влияние)
         
-        // Если платформа движется, добавляем импульс мячу
-        if (paddleDirection !== 0) {
-            ball.dx += paddleDirection * influence;
-        }
+        // Добавляем часть скорости платформы к горизонтальной скорости мяча
+        ball.dx += paddleVelocity * influence;
         
         // Нормализация скорости мяча (чтобы не ускорялся бесконечно)
         const targetSpeed = 8; // Базовая скорость мяча
@@ -2719,9 +3193,6 @@ class Arcanoid extends BaseGame{
             ball.dx = (ball.dx / currentSpeed) * targetSpeed;
             ball.dy = (ball.dy / currentSpeed) * targetSpeed;
         }
-            
-        // Поднимаем мяч над платформой, чтобы не застрял
-        ball.y = paddle.y - ball.radius;
         
         return true;
     }
@@ -2750,6 +3221,7 @@ class Arcanoid extends BaseGame{
     
     nextLevel() {
         this.currentLevel++;
+        this.lives = 5;
         this.ui.showLevelNotification(this.currentLevel);
         this.initLevel();
     }
@@ -2794,8 +3266,8 @@ document.addEventListener('DOMContentLoaded', () =>{
 
 
         // 3. Добавляем функцию отладки, которая работает с ЭТИМ экземпляром
-    window.debug = (type = '') => {
-
+    window.debug = (rows, cols, padding, health) => {
+        game.level.generateDebug(rows, cols, padding, health);
     };
 });
     
@@ -2815,8 +3287,8 @@ export class BonusManager {
         this.activeBonuses = [];
     }
     
-    tryDropBonuse(x, y, enemyTypeName) {
-        const dropRate = gameConfig.bonusRates[enemyTypeName] || 0;
+    tryDropBonuse(x, y) {
+        const dropRate = gameConfig.bonusRate || 0;
         const randomNum = Math.random();
         
         console.log(`🎲 Выпало ${randomNum} из ${dropRate}`);
@@ -2953,26 +3425,57 @@ import { gameConfig } from "../config.js";
 import { Block } from "../GameObjects/Entite.js";
 
 export class Level {
-    constructor(rows, cols, blockWidth, blockHeight, padding, health) {
+    constructor(levelConfig) {
         this.blocks = [];
-        this.health = health //Временное свойство сложности
 
         this.canvasWidth = gameConfig.canvas.width;
-        this.generate(rows, cols, blockWidth, blockHeight, padding);
+        this.generate(levelConfig);
     }
     
-    generate(rows, cols, blockWidth, blockHeight, padding) {
-        const colors = ['#ff0000', '#ff8800', '#ffff00', '#00ff00', '#0004ffff'];
+    generate(levelConfig) {
+        const { rows, cols, padding, map } = levelConfig;
+        const blockWidth = 80;
+        const blockHeight = 30;
+
+        const colors = ['#ff0000', '#ff8800', '#ffff00', '#00ff00', '#0004ffff', '#7700ffff', '#2f0164ff'];
         const totalWidth = cols * blockWidth + (cols - 1) * padding;
         const offsetX = (this.canvasWidth - totalWidth) / 2;
         
         for (let row = 0; row < rows; row++) {
+            const rowString = map[row];
+            
             for (let col = 0; col < cols; col++) {
+                const blockType = parseInt(rowString[col]);
+                
+                if (blockType === 0) continue;
+                
                 const x = offsetX + col * (blockWidth + padding);
                 const y = 50 + row * (blockHeight + padding);
                 const color = colors[row % colors.length];
+                const health = blockType;
                 
-                this.blocks.push(new Block(x, y, blockWidth, blockHeight, color, this.health));
+                this.blocks.push(new Block(x, y, blockWidth, blockHeight, color, health));
+            }
+        }
+    }
+
+    generateDebug(rows, cols, padding, health) {
+        this.blocks = [];
+        const blockWidth = 80;
+        const blockHeight = 30;
+
+        const colors = ['#ff0000', '#ff8800', '#ffff00', '#00ff00', '#0004ffff', '#7700ffff', '#2f0164ff'];
+        const totalWidth = cols * blockWidth + (cols - 1) * padding;
+        const offsetX = (this.canvasWidth - totalWidth) / 2;
+        
+        for (let row = 0; row < rows; row++) {
+            
+            for (let col = 0; col < cols; col++) {
+
+                const x = offsetX + col * (blockWidth + padding);
+                const y = 50 + row * (blockHeight + padding);
+                
+                this.blocks.push(new Block(x, y, blockWidth, blockHeight, colors[1], health));
             }
         }
     }
@@ -3114,12 +3617,13 @@ import { GameObject } from "./GameObject.js";
 
 export class Bonus extends GameObject {
     constructor(x, y, type) {
-        super(x, y, 20, 20); // Размер бонуса 30x30
+        super(x, y, 20, 20);
         
         this.type = type; // 'health', 'fullHealth', 'fireRate', 'multiShot', 'shield', 'strongShield'
         this.speed = 2; // Скорость падения
         this.lifetime = 10000; // Бонус исчезает через 10 секунд
         this.lifetimeElapsed = 0;
+        this.radius = 5;
 
         // Настройка внешнего вида в зависимости от типа
         this.setupAppearance();
@@ -3132,35 +3636,23 @@ export class Bonus extends GameObject {
                 this.symbol = '❤️';
                 this.name = 'Здоровье';
                 break;
-            case 'fullHealth':
-                this.color = '#ff00ff';
-                this.symbol = '💟';
-                this.name = 'Полное здоровье';
+
+            case 'sizeUp':
+                this.color = '#00ff00';
+                this.symbol = '📏';
+                this.name = 'Платформа длиннее';
                 break;
-            case 'fireRate':
-                this.color = '#ffff00';
-                this.symbol = '⚡';
-                this.name = 'Скорострельность';
+
+            case 'threeBalls':
+                this.color = '#00ff00';
+                this.symbol = '🎱';
+                this.name = '+3 мяча';
                 break;
-            case 'multiShot':
-                this.color = '#ff8800';
-                this.symbol = '🔗';
-                this.name = 'Мульти-выстрел';
-                break;
-            case 'shield':
-                this.color = '#00ffff';
-                this.symbol = '🛡️';
-                this.name = 'Щит';
-                break;
-            case 'strongShield':
-                this.color = '#8800ff';
-                this.symbol = '🔰';
-                this.name = 'Крепкий щит';
-                break;
-            case 'speed':
-                this.color = '#ecff95ff';
+
+            case 'speedUp':
+                this.color = '#00ff00';
                 this.symbol = '🚀';
-                this.name = 'Ускорение';
+                this.name = 'Платформа быстрее';
                 break;
         }
     }
@@ -3181,12 +3673,18 @@ export class Bonus extends GameObject {
     draw(ctx) {
         // Рисуем фон
         ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.sizeX, this.sizeY);
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
         
         // Рисуем символ
         ctx.font = '20px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
+
+
+
         ctx.fillText(this.symbol, this.x + this.sizeX / 2, this.y + this.sizeY / 2);
     }
 }
@@ -3209,6 +3707,7 @@ export class Paddle extends GameObject {
         this.lastX = x; 
 
         this.speed = 8;
+        this.velocity = 0;
     }
     
     moveLeft() {
@@ -3223,14 +3722,9 @@ export class Paddle extends GameObject {
         }
     }
 
-    // Определяем направление движения (-1 влево, 0 стоит, 1 вправо)
-    getMovementDirection() {
-        const diff = this.x - this.lastX;
-        if (Math.abs(diff) < 1) return 0; // Платформа стоит
-        return diff > 0 ? 1 : -1;
-    }
-
+    // Вычисляем скорость платформы
     updateLastPosition() {
+        this.velocity = this.x - this.lastX; // ← Скорость = изменение позиции
         this.lastX = this.x;
     }
     
@@ -3249,11 +3743,17 @@ export class Ball extends GameObject {
         this.dy = 0;
         this.isAttached = true; // Мяч "прилип" к платформе в начале
         this.isLost = false;
+        this.paddle = null;
+
+        this.prevX = x;
+        this.prevY = y;
     }
     
     move() {
         if (this.isAttached) return; // Ждём запуска
-        
+        this.prevX = this.x;
+        this.prevY = this.y;
+
         this.x += this.dx;
         this.y += this.dy;
     }
@@ -3261,12 +3761,19 @@ export class Ball extends GameObject {
     launch() {
         if (!this.isAttached) return;
         this.isAttached = false;
+
+        // Получаем направление платформы в момент запуска
+        const paddleDirection = this.paddle ? this.paddle.velocity : 0;
+
+        console.log(paddleDirection);
+        // Если платформа движется — используем это, иначе небольшое случайное отклонение
+        if (paddleDirection !== 0) {
+            this.dx = paddleDirection * 2; // Влияние платформы
+        } else {
+            this.dx = 0; // Случайное отклонение
+        }
         
-        // Мяч летит строго вверх с небольшим случайным отклонением
-        // Отклонение от -2 до +2 пикселей по горизонтали
-        const randomOffset = (Math.random() - 0.5) * 4;
-        
-        this.dx = randomOffset;
+
         this.dy = -this.baseSpeed;
         
         // Нормализуем скорость, чтобы она была одинаковой
@@ -3308,6 +3815,7 @@ export class Block extends GameObject {
         this.health = health;
         this.maxHealth = health;
         this.isDestroyed = false;
+        this.radius = 5;
     }
     
     takeDamage() {
@@ -3326,13 +3834,16 @@ export class Block extends GameObject {
         const alpha = this.health / this.maxHealth;
         ctx.fillStyle = this.color;
         ctx.globalAlpha = 0.3 + (alpha * 0.7);
-        ctx.fillRect(this.x, this.y, this.sizeX, this.sizeY);
+        ctx.beginPath();
+        ctx.roundRect(this.x, this.y, this.sizeX, this.sizeY, this.radius);
+        ctx.fill();
+
         ctx.globalAlpha = 1;
         
         // Рамка
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 1;
-        ctx.strokeRect(this.x, this.y, this.sizeX, this.sizeY);
+        ctx.stroke(); 
     }
 }
 

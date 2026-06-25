@@ -1,0 +1,1975 @@
+﻿// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\index.html =====
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Арканоид</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-wrapper">
+        <!-- Игровая область -->
+        <div id="game-area">
+            <canvas id="backgroundCanvas" width="1000" height="900"></canvas>
+            <canvas id="gameCanvas" width="1000" height="900"></canvas>
+            
+            <!-- Уведомления (оставляем только нужные) -->
+            <div id="notification-level" class="game-notification hidden">
+                Уровень <span id="notif-level-value">1</span>!
+            </div>
+            <div id="notification-bonus" class="game-notification hidden">
+                ✨ Получено: <span id="notif-bonus-name">Бонус</span>!
+            </div>
+            
+            <!-- Меню -->
+            <div id="main-menu" class="ui-panel">
+                <h1>Арканоид</h1>
+                <button id="start-game-btn">Новая игра</button>
+            </div>
+            <div id="game-over" class="ui-panel hidden">
+                <h1>Увы, вы проиграли 😢</h1>
+                <button id="restart-btn">Играть снова</button>
+            </div>
+            <div id="game-pause" class="ui-panel hidden">
+                <h1>Игра на паузе</h1>
+                <button id="resume-btn">Продолжить</button>
+            </div>
+        </div>
+        
+        <!-- Правая панель со статами -->
+        <aside id="stats-panel">
+            <h2>Статистика</h2>
+            
+            <div class="stat-block">
+                <span class="stat-label">Уровень: <span class="stat-value" id="level-display">1</span></span>
+            </div>
+            
+            <div class="stat-block">
+                <span class="stat-label">Жизни: <span class="stat-value" id="lives-display">3</span></span>
+            </div>
+            
+            <div class="stat-block">
+                <span class="stat-label">Счет: <span class="stat-value" id="score-display">0</span></span>
+            </div>
+            
+            <div class="stat-block">
+                <span class="stat-label">Разбито блоков: <span class="stat-value" id="blocks-display">0</span></span>
+            </div>
+            
+            <!-- Место для будущих бонусов -->
+            <div class="stat-block">
+                <span class="stat-label">Бонусы:</span>
+                <div id="active-bonuses" class="bonuses-list"></div>
+            </div>
+            
+            <div class="menu-section">
+                <!-- Место для будущего меню -->
+            </div>
+        </aside>
+    </div>
+    
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
+
+// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\AssetLoader.js =====
+import { gameConfig } from "./config.js";
+
+export class AssetLoader {
+    constructor() {
+        this.playerSprites = {};   // Загруженные спрайты игрока
+        this.spriteSheets = {};    // Загруженные спрайт-листы врагов
+    }
+    
+    loadAll(callback) {
+        let totalAssets = 0;
+        let loadedAssets = 0;
+        
+        const checkComplete = () => {
+            loadedAssets++;
+            if (loadedAssets === totalAssets) {
+                console.log('Все ресурсы загружены!');
+                callback();
+            }
+        };
+        
+        // 1. Загружаем спрайты игрока
+        for (const [direction, src] of Object.entries(gameConfig.playerSprites)) {
+            totalAssets++;
+            const img = new Image();
+            img.src = src;
+            img.onload = checkComplete;
+            this.playerSprites[direction] = img;
+        }
+        
+        // 2. Загружаем спрайт-листы врагов
+        const loadedPaths = new Map(); // ← Изменили Set на Map
+        
+        // Сначала собираем все уникальные пути
+        for (const type of gameConfig.enemyTypes) {
+            if (!loadedPaths.has(type.spriteSheet)) {
+                totalAssets++;
+                const img = new Image();
+                img.src = type.spriteSheet;
+                img.onload = checkComplete;
+                loadedPaths.set(type.spriteSheet, img); // ← Сохраняем в Map
+            }
+        }
+        
+        // Теперь присваиваем каждый спрайт-лист всем типам, которые его используют
+        for (const type of gameConfig.enemyTypes) {
+            this.spriteSheets[type.name] = loadedPaths.get(type.spriteSheet);
+        }
+        
+        // Защита от ситуации, когда ресурсов нет
+        if (totalAssets === 0) {
+            callback();
+        }
+    }
+}
+
+// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\config.js =====
+
+export const gameConfig = {
+    canvas: {
+        width: 1000,
+        height: 900
+    },
+    
+    paddle:{
+        paddleHeight: 15,
+        paddleWidth: 120
+    },
+    
+    score: {
+        initialMultiplier: 1,
+        multiplierGrowth: 1.5
+    },
+
+    blocksType: [
+        {
+            name: 'simple',
+            sizeWidth: 80,
+            sizeHeight: 30,
+            points: 5
+        }
+    ],
+
+    bonusTypes: [
+        { type: 'sizeUp', weight: 25 , duration: 15},
+        { type: 'threeBalls', weight: 20, duration: 20},
+        //{ type: 'slowSpeedBall', weight: 20 },
+        { type: 'speedUp', weight: 25, duration: 15},
+        { type: 'health', weight: 30, duration: 0},
+    ],
+
+    bonusRate: 0.9,
+
+    levelMaps: [
+        // Уровень 1 - Простой старт
+        {
+            rows: 3,
+            cols: 10,
+            padding: 8,
+            map: [
+                "3333333333",
+                "1111111111",
+                "2222222222"
+            ]
+        },
+        // Уровень 2 - С промежутками
+        {
+            rows: 4,
+            cols: 10,
+            padding: 8,
+            map: [
+                "1111111111",
+                "1001100111",
+                "1111111111",
+                "1001100111"
+            ]
+        },
+        // Уровень 3 - Шахматка
+        {
+            rows: 5,
+            cols: 10,
+            padding: 8,
+            map: [
+                "1010101010",
+                "0101010101",
+                "1010101010",
+                "0101010101",
+                "1010101010"
+            ]
+        },
+        // Уровень 4 - Пирамида
+        {
+            rows: 5,
+            cols: 11,
+            padding: 8,
+            map: [
+                "00000100000",
+                "00001110000",
+                "00011111000",
+                "00111111100",
+                "01111111110"
+            ]
+        },
+        // Уровень 5 - Рамка
+        {
+            rows: 6,
+            cols: 10,
+            padding: 8,
+            map: [
+                "1111111111",
+                "1000000001",
+                "1011111101",
+                "1010010101",
+                "1000000001",
+                "1111111111"
+            ]
+        },
+        // Уровень 6 - Волна
+        {
+            rows: 5,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "01111111110",
+                "00111111100",
+                "01111111110",
+                "11111111111"
+            ]
+        },
+        // Уровень 7 - Крест
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "00001000000",
+                "00001000000",
+                "00001000000",
+                "22222222222",
+                "00001000000",
+                "00001000000",
+                "00001000000"
+            ]
+        },
+        // Уровень 8 - Двойные ряды
+        {
+            rows: 6,
+            cols: 10,
+            padding: 8,
+            map: [
+                "1111111111",
+                "1111111111",
+                "0000000000",
+                "1111111111",
+                "1111111111",
+                "0000000000"
+            ]
+        },
+        // Уровень 9 - Диагональ
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "30000000003",
+                "03000000030",
+                "00300000300",
+                "00030003000",
+                "00003030000",
+                "00000300000"
+            ]
+        },
+        // Уровень 10 - Частокол
+        {
+            rows: 5,
+            cols: 11,
+            padding: 8,
+            map: [
+                "10101010101",
+                "10101010101",
+                "10101010101",
+                "10101010101",
+                "10101010101"
+            ]
+        },
+        // Уровень 11 - Концентрические круги (квадраты)
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "10000000001",
+                "10111111101",
+                "10100010101",
+                "10111111101",
+                "10000000001",
+                "11111111111"
+            ]
+        },
+        // Уровень 12 - Лестница
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "10000000000",
+                "22000000000",
+                "33300000000",
+                "44440000000",
+                "55555000000",
+                "66666600000"
+            ]
+        },
+        // Уровень 13 - Обратная лестница
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "00000666666",
+                "00000055555",
+                "00000004444",
+                "00000000333",
+                "00000000022",
+                "00000000001"
+            ]
+        },
+        // Уровень 14 - Туннель
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "222222222222",
+                "20000000002",
+                "20000000002",
+                "20000000002",
+                "20000000002",
+                "20000000002",
+                "222222222222"
+            ]
+        },
+        // Уровень 15 - Сетка
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "10000000001",
+                "10111111101",
+                "10100000101",
+                "10111111101",
+                "10000000001",
+                "11111111111"
+            ]
+        },
+        // Уровень 16 - Песочные часы
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "01111111110",
+                "00222222200",
+                "00033333000",
+                "00222222200",
+                "01111111110",
+                "11111111111"
+            ]
+        },
+        // Уровень 17 - Зигзаг
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111000000",
+                "00000111110",
+                "00000011111",
+                "11111000000",
+                "01111100000",
+                "00000111110"
+            ]
+        },
+        // Уровень 18 - Алмаз
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "00001000000",
+                "00011100000",
+                "00111110000",
+                "01111111000",
+                "00111110000",
+                "00011100000",
+                "00001000000"
+            ]
+        },
+        // Уровень 19 - Двойная рамка
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "11111111111",
+                "11000000011",
+                "11000000011",
+                "11000000011",
+                "11111111111",
+                "11111111111"
+            ]
+        },
+        // Уровень 20 - Мост
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11000000011",
+                "11000000011",
+                "11111111111",
+                "00111111000",
+                "00011100000",
+                "00001000000"
+            ]
+        },
+        // Уровень 21 - Каскад
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "01111111110",
+                "00111111100",
+                "00011111000",
+                "00001110000",
+                "00000100000"
+            ]
+        },
+        // Уровень 22 - Бабочка
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "10001110001",
+                "11001110011",
+                "11111111111",
+                "01111111110",
+                "00111111100",
+                "00011111000",
+                "00001110000"
+            ]
+        },
+        // Уровень 23 - Спираль
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "10000000001",
+                "10111111101",
+                "10100000101",
+                "10101110101",
+                "10100000101",
+                "11111111111"
+            ]
+        },
+        // Уровень 24 - Полосы
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "00000000000",
+                "11111111111",
+                "00000000000",
+                "11111111111",
+                "00000000000",
+                "11111111111"
+            ]
+        },
+        // Уровень 25 - Вертикальные полосы
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "10101010101",
+                "10101010101",
+                "10101010101",
+                "10101010101",
+                "10101010101",
+                "10101010101",
+                "10101010101"
+            ]
+        },
+        // Уровень 26 - Замок
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "10000000001",
+                "10111111101",
+                "10100000101",
+                "10101110101",
+                "10100000101",
+                "10111111101",
+                "11111111111"
+            ]
+        },
+        // Уровень 27 - Треугольники
+        {
+            rows: 6,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11100000111",
+                "11110001111",
+                "11111011111",
+                "11111111111",
+                "01111111110",
+                "00111111100"
+            ]
+        },
+        // Уровень 28 - Лабиринт
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "10001000101",
+                "10101010101",
+                "10100010001",
+                "10111010111",
+                "10000000001",
+                "11111111111"
+            ]
+        },
+        // Уровень 29 - Сердце
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "00110001100",
+                "01111011110",
+                "11111111111",
+                "11111111111",
+                "01111111110",
+                "00111111100",
+                "00011111000"
+            ]
+        },
+        // Уровень 30
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "10101010101",
+                "10111111101",
+                "10100000101",
+                "10111111101",
+                "10101010101",
+                "11111111111"
+            ]
+        },
+        // Уровень 31
+        {
+            rows: 7,
+            cols: 11,
+            padding: 8,
+            map: [
+                "11111111111",
+                "10000000001",
+                "10101010101",
+                "10000000001",
+                "10101010101",
+                "10000000001",
+                "11111111111"
+            ]
+        }
+    ]
+
+
+};
+
+// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\main.js =====
+import { InputHandler } from '../../../common/InputHandler.js';
+import { BaseGame } from '../../../common/BaseGame.js';
+import { AssetLoader } from "./AssetLoader.js";
+import { ScoreManager } from './Managers/ScoreManager.js';
+import { UIManager } from "./Managers/UIManager.js";
+import { Paddle, Ball } from './GameObjects/Entite.js';
+import { Level } from './Managers/LevelsManager.js';
+import { gameConfig } from "./config.js";
+import { BonusManager } from './Managers/BonusManager.js';
+
+class Arcanoid extends BaseGame{
+    constructor(){
+        super('gameCanvas');
+        //Холст игры
+        // this.canvas = document.getElementById('gameCanvas');
+        // this.ctx = this.canvas.getContext('2d');
+
+        // Менеджеры
+        this.input = new InputHandler(() => this.togglePause());
+        this.scoreManager = new ScoreManager();
+        this.ui = new UIManager();
+        this.bonusManager = new BonusManager();
+        
+        // Игровые сущности
+        this.paddle = null;
+        this.mainBall = null;
+        this.level = null;
+        this.balls = [];
+
+        // Состояние
+        this.isGameOver = false;
+        this.gamePause = false;
+        this.currentLevel = 1;
+        this.lives = 5;
+        this.lastFrameTime = Date.now();
+
+
+        // Загрузка ресурсов на будущее
+        this.assetLoader = new AssetLoader();
+
+    }
+
+    // Реализуем метод init() из BaseGame
+    init() {
+        this.initUI();
+        this.ui.showMainMenu();
+    }
+
+    initUI() {
+        const startBtn = document.getElementById('start-game-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const resumeBtn = document.getElementById('resume-btn');
+
+        if (startBtn) {
+            startBtn.addEventListener('click', () =>
+                {
+                    this.startGame();
+                });
+                    
+        }
+        if (restartBtn) {
+            restartBtn.addEventListener('click', () =>
+                {
+                    this.startGame();
+                });
+        }
+
+        if (resumeBtn) {
+            resumeBtn.addEventListener('click', () =>
+                {
+                     this.togglePause();
+                });
+        }
+        
+    }
+
+    startGame() {
+        this.isGameOver = false;
+        this.gamePause = false;
+        this.currentLevel = 1;
+        this.lives = 5;
+        this.lastFrameTime = Date.now();
+        this.balls = [];
+
+        this.scoreManager.reset();
+
+        this.ui.hideMainMenu();
+        this.ui.hideGameOver();
+        this.ui.updateAll(this.scoreManager);
+
+        this.initLevel();
+        this.start();
+    }    
+
+    initLevel() {
+
+        const levelsCount = gameConfig.levelMaps.length;
+        const randomLevel = Math.floor(Math.random() * levelsCount);
+
+        this.level = new Level(gameConfig.levelMaps[randomLevel]);
+        
+        // Создаем платформу
+        const paddleX = (this.canvas.width - gameConfig.paddle.paddleWidth) / 2;
+        const paddleY = this.canvas.height - 50;
+        
+        this.paddle = new Paddle(paddleX, paddleY);
+        
+        // Создаем мяч
+        const ballRadius = 8;
+        const ballSpeed = 8;
+        const ballX = this.canvas.width / 2;
+        const ballY = paddleY - ballRadius - 5;
+        
+        const newBall = new Ball(ballX, ballY, ballRadius, ballSpeed);
+        this.balls = [newBall]; // Массив с одним мячом
+        
+        this.ui.updateLevelInfo(this.currentLevel, this.lives);
+    }
+    
+    gameOver() {
+        this.stop(); // Останавливаем игровой цикл через BaseGame
+        this.isGameOver = true;
+        this.ui.showGameOver();
+    }
+
+    update(deltaTime) {
+        if (this.gamePause) {
+            this.updatePause();
+            return; // ← При паузе update не идёт дальше
+        }
+                
+        // Обновляем платформу
+        this.updatePaddle();
+        
+        // Обновляем мячи
+        this.updateBalls();
+        
+        // Проверяем столкновения
+        this.checkCollisions();
+        
+        // Проверяем сбор бонусов
+        const collectedBonus = this.bonusManager.checkCollision(this);
+        if (collectedBonus) {
+            this.ui.showBonusNotification(collectedBonus);
+        }
+
+        this.bonusManager.updateActiveEffects(this);
+
+        // Проверяем завершение уровня
+        if (this.level.isCleared()) {
+            this.nextLevel();
+        }
+        
+        this.ui.updateScore(this.scoreManager.score);
+    }
+
+    updatePause(){
+        this.ui.showAndHidePause(this.gamePause);
+    }
+
+    togglePause() {
+        this.gamePause = !this.gamePause;
+        this.input.pauseKey = this.gamePause;
+        this.ui.showAndHidePause(this.gamePause);
+    }
+
+    updatePaddle() {
+        if (!this.paddle) return;
+        
+        // Движение платформы
+        if (this.input.isPressed('ArrowRight')) {
+            this.paddle.moveRight(this.canvas.width);
+        }
+        if (this.input.isPressed('ArrowLeft')) {
+            this.paddle.moveLeft();
+        }
+        
+        this.paddle.updateLastPosition();
+
+        // // Если мяч прикреплен к платформе, двигаем его вместе с платформой
+        // if (this.mainBall && this.mainBall.isAttached) {
+        //     this.mainBall.x = this.paddle.x + this.paddle.sizeX / 2;
+        //     this.mainBall.y = this.paddle.y - this.mainBall.radius - 2;
+        //     this.mainBall.paddle = this.paddle;
+        // }
+        
+        // // Запуск мяча по пробелу
+        // if (this.input.isSpacePressed() && this.mainBall && this.mainBall.isAttached) {
+        //     this.mainBall.launch();
+        // }
+
+        // Если есть мячи, прикрепленные к платформе, двигаем их вместе
+        for (const ball of this.balls) {
+            if (ball.isAttached) {
+                ball.x = this.paddle.x + this.paddle.sizeX / 2;
+                ball.y = this.paddle.y - ball.radius - 2;
+            }
+        }
+        
+        // Запуск мяча по пробелу (запускаем все прикрепленные мячи)
+        if (this.input.isSpacePressed()) {
+            for (const ball of this.balls) {
+                if (ball.isAttached) {
+                    ball.launch();
+                }
+            }
+        }
+    }
+
+    updateBalls() {
+        for (const ball of this.balls) {
+            ball.move();
+            
+            // Проверяем столкновение со стенами
+            const ballLost = ball.checkWallCollision(this.canvas.width, this.canvas.height);
+            
+            if (ballLost) {
+                ball.isLost = true;
+            }
+        }
+        
+        // Удаляем потерянные мячи
+        this.balls = this.balls.filter(ball => !ball.isLost);
+        
+        // Если мячей не осталось, теряем жизнь
+        if (this.balls.length === 0 && !this.isGameOver) {
+            this.loseLife();
+        }
+    }
+
+    checkCollisions() {
+        if (this.balls.length === 0 || !this.paddle) return;
+        
+        // Проверяем столкновения для ВСЕХ мячей
+        for (const ball of this.balls) {
+            // Столкновение с блоками
+            for (const block of this.level.blocks) {
+                if (block.isDestroyed) continue;
+                
+                if (this.checkBallBlockCollision(ball, block)) {
+                    if (block.isDestroyed) {
+                        this.scoreManager.onBlockDestroy(block, this.bonusManager);
+                    }
+                    break;
+                }
+            }
+            
+            // Столкновение с платформой
+            this.checkBallPaddleCollision(ball, this.paddle);
+        }
+    }
+    
+    checkBallBlockCollision(ball, block) {
+        if (block.isDestroyed) return false;
+        
+        // Проверяем пересечение
+        if (ball.x + ball.radius < block.x ||
+            ball.x - ball.radius > block.x + block.sizeX ||
+            ball.y + ball.radius < block.y ||
+            ball.y - ball.radius > block.y + block.sizeY) {
+            return false;
+        }
+
+        // Используем предыдущую позицию мяча для определения стороны удара
+        const prevX = ball.x - ball.dx;
+        const prevY = ball.y - ball.dy;
+        
+        // Проверяем, с какой стороны мяч НЕ пересекался в предыдущем кадре
+        const wasOutsideLeft = prevX + ball.radius < block.x;
+        const wasOutsideRight = prevX - ball.radius > block.x + block.sizeX;
+        const wasOutsideTop = prevY + ball.radius < block.y;
+        const wasOutsideBottom = prevY - ball.radius > block.y + block.sizeY;
+        
+        // Определяем сторону удара на основе предыдущей позиции
+        if (wasOutsideLeft || wasOutsideRight) {
+            ball.dx = -ball.dx; // Удар сбоку
+        } else if (wasOutsideTop || wasOutsideBottom) {
+            ball.dy = -ball.dy; // Удар сверху/снизу
+        } else {
+            // Если мяч был внутри блока (туннелирование), используем минимальное перекрытие
+            const overlapLeft = (ball.x + ball.radius) - block.x;
+            const overlapRight = (block.x + block.sizeX) - (ball.x - ball.radius);
+            const overlapTop = (ball.y + ball.radius) - block.y;
+            const overlapBottom = (block.y + block.sizeY) - (ball.y - ball.radius);
+            
+            const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+            
+            if (minOverlap === overlapLeft || minOverlap === overlapRight) {
+                ball.dx = -ball.dx;
+            } else {
+                ball.dy = -ball.dy;
+            }
+        }
+        
+        return block.takeDamage();
+    }
+    
+    checkBallPaddleCollision(ball, paddle) {
+        // Проверка столкновения
+        if (ball.y + ball.radius < paddle.y) return false;
+        if (ball.x < paddle.x || ball.x > paddle.x + paddle.sizeX) return false;
+        if (ball.dy < 0) return false; // мяч летит вверх — не сталкиваемся
+        
+        // Используем предыдущую позицию для определения момента столкновения
+        const prevY = ball.y - ball.dy;
+        
+        // Если в предыдущем кадре мяч был выше платформы, значит столкновение только что произошло
+        if (prevY + ball.radius <= paddle.y) {
+            // Мяч только что коснулся платформы — корректируем позицию плавно
+            ball.y = paddle.y - ball.radius;
+        } else {
+            // Мяч уже внутри/под платформой (туннелирование) — вычисляем точку столкновения
+            // Интерполируем позицию между предыдущим и текущим кадром
+            const penetration = (ball.y + ball.radius) - paddle.y;
+            ball.y = paddle.y - ball.radius - penetration * 0.5; // Выталкиваем на половину проникновения
+        }
+        
+        // Базовый отскок - инвертируем вертикальную скорость
+        ball.dy = -Math.abs(ball.dy); // Гарантируем движение вверх
+        
+        // 🎯 Влияние движения платформы на мяч
+        const paddleVelocity = paddle.velocity || 0;
+        const influence = 0.5; // Коэффициент влияния (0-1, чем больше — тем сильнее влияние)
+        
+        // Добавляем часть скорости платформы к горизонтальной скорости мяча
+        ball.dx += paddleVelocity * influence;
+        
+        // Нормализация скорости мяча (чтобы не ускорялся бесконечно)
+        const targetSpeed = 8; // Базовая скорость мяча
+        const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+        
+        if (currentSpeed > 0) {
+            ball.dx = (ball.dx / currentSpeed) * targetSpeed;
+            ball.dy = (ball.dy / currentSpeed) * targetSpeed;
+        }
+        
+        return true;
+    }
+    
+    loseLife() {
+        this.lives--;
+        this.ui.updateLevelInfo(this.currentLevel, this.lives);
+        
+        if (this.lives <= 0) {
+            this.gameOver();
+        } else {
+            // Создаем ОДИН новый мяч
+            const ballRadius = 8;
+            const ballSpeed = 8;
+            const ballX = this.canvas.width / 2;
+            const ballY = this.paddle.y - ballRadius - 5;
+            
+            const newBall = new Ball(ballX, ballY, ballRadius, ballSpeed);
+            this.balls = [newBall]; // Очищаем массив и добавляем новый мяч
+        }
+    }
+    
+    nextLevel() {
+        this.currentLevel++;
+        this.lives = 5;
+        this.ui.showLevelNotification(this.currentLevel);
+        this.initLevel();
+    }
+
+
+    draw() {
+        // Очищаем canvas
+        this.ctx.fillStyle = '#050510';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Рисуем уровень (блоки)
+        if (this.level) {
+            this.level.draw(this.ctx);
+        }
+        
+        // Рисуем платформу
+        if (this.paddle) {
+            this.paddle.draw(this.ctx);
+        }
+
+        // Рисуем платформу
+        if (this.bonusManager) {
+            this.bonusManager.draw(this.ctx);
+        }
+        
+        // Рисуем мячи
+        for (const ball of this.balls) {
+            ball.draw(this.ctx);
+        }
+    }
+    
+    destroy() {
+        this.stop();
+        console.log('Arcanoid destroyed');
+    }
+     
+}
+
+let game = null;
+
+document.addEventListener('DOMContentLoaded', () =>{
+    game = new Arcanoid();
+    game.init();
+
+    // 2. Делаем игру доступной в консоли
+    window.game = game;
+
+
+        // 3. Добавляем функцию отладки, которая работает с ЭТИМ экземпляром
+    window.debug = (rows, cols, padding, health) => {
+        game.level.generateDebug(rows, cols, padding, health);
+    };
+});
+    
+
+
+
+// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\Managers\BonusManager.js =====
+import { Bonus } from "../GameObjects/Bonus.js";
+import { gameConfig } from "../config.js";
+
+export class BonusManager {
+    constructor() {
+        this.activeBonuses = [];
+        this.activeEffects = []; // Активные эффекты бонусов
+    }
+    
+    reset() {
+        this.activeBonuses = [];
+        this.activeEffects = [];
+    }
+    
+    tryDropBonuse(x, y) {
+        const dropRate = gameConfig.bonusRate || 0;
+        const randomNum = Math.random();
+        
+        console.log(`🎲 Выпало ${randomNum} из ${dropRate}`);
+
+        // Проверяем, выпадет ли бонус
+        if (randomNum < dropRate) {
+            const bonuseType = this.getRandomBonuseType();
+            console.log(` Лови ${bonuseType}`);
+            const bonusConfig = gameConfig.bonusTypes.find(t => t.type === bonuseType);
+            const duration = bonusConfig ? bonusConfig.duration : 0;
+            const bonuse = new Bonus(x, y, bonuseType, duration);
+            this.activeBonuses.push(bonuse);
+        }
+    }
+    
+    getRandomBonuseType() {
+        const types = gameConfig.bonusTypes;
+        const totalWeight = types.reduce((sum, type) => sum + type.weight, 0);
+        
+        let random = Math.random() * totalWeight;
+        
+        for (const type of types) {
+            random -= type.weight;
+            if (random <= 0) {
+                return type.type;
+            }
+        }
+        
+        return types[0].type;
+    }
+    
+    update(deltaTime) {
+        // Двигаем бонусы
+        for (const bonuse of this.activeBonuses) {
+            bonuse.move(deltaTime);
+        }
+        
+        // Удаляем улетевшие и истёкшие
+        this.activeBonuses = this.activeBonuses.filter(p => 
+            !p.isOffScreen(gameConfig.canvas.height,gameConfig.canvas.width) && !p.isExpired()
+        );
+    }
+    
+    draw(ctx) {
+        for (const bonuse of this.activeBonuses) {
+            bonuse.draw(ctx);
+        }
+    }
+    
+    checkCollision(game) {
+
+        for (let i = this.activeBonuses.length - 1; i >= 0; i--) {
+            const bonus = this.activeBonuses[i];
+            
+            // Проверяем столкновение с платформой
+            if (this.isColliding(bonus, game.paddle)) {
+                const applied = this.applyBonuse(game, bonus.type, bonus.duration);
+                
+                if (applied) {
+                    this.activeBonuses.splice(i, 1);
+                    return bonus.name;
+                }
+            }
+        }
+            
+        return null;
+    }
+    
+    isColliding(rect1, rect2) {
+        return !(
+            rect1.x + rect1.sizeX < rect2.x ||
+            rect1.x > rect2.x + rect2.sizeX ||
+            rect1.y + rect1.sizeY < rect2.y ||
+            rect1.y > rect2.y + rect2.sizeY
+        );
+    }
+    
+    applyBonuse(game, type) {
+        switch(type) {
+            case 'health':
+                if (game.lives < 5) {
+                    game.lives++;
+                    return true;
+                }
+                return false; // Здоровье полное
+                break;
+                
+            case 'sizeUp':
+                // Увеличиваем платформу
+                game.paddle.sizeX = Math.min(200, game.paddle.sizeX + 30);
+                if (duration > 0) {
+                    this.activeEffects.push({
+                        type: 'sizeUp',
+                        expiresAt: now + duration,
+                        originalSize: game.paddle.sizeX - 30
+                    });
+                }
+                return true;
+                
+            case 'threeBalls':
+                // Создаем 3 дополнительных мяча
+                this.addExtraBalls(game, 3);
+                return true;
+                
+            case 'speedUp':
+                // Увеличиваем скорость платформы
+                game.paddle.speed = Math.min(12, game.paddle.speed + 2);
+                if (duration > 0) {
+                    this.activeEffects.push({
+                        type: 'speedUp',
+                        expiresAt: now + duration,
+                        originalSpeed: game.paddle.speed - 2
+                    });
+                }
+                return true;
+        }
+        
+        return false;
+    }
+
+    addExtraBalls(game, count) {
+        const baseBall = game.balls[0];
+        if (!baseBall) return;
+        
+        for (let i = 0; i < count; i++) {
+            const newBall = new Ball(
+                baseBall.x,
+                baseBall.y,
+                baseBall.radius,
+                baseBall.baseSpeed
+            );
+            
+            // Задаем случайное направление
+            const angle = (Math.random() - 0.5) * Math.PI; // -90° до +90°
+            newBall.dx = newBall.baseSpeed * Math.sin(angle);
+            newBall.dy = -newBall.baseSpeed * Math.cos(angle);
+            newBall.isAttached = false;
+            
+            game.balls.push(newBall);
+        }
+    }
+
+    updateActiveEffects(game) {
+        const now = Date.now();
+        
+        // Проверяем истекшие эффекты
+        this.activeEffects = this.activeEffects.filter(effect => {
+            if (effect.expiresAt > 0 && now >= effect.expiresAt) {
+                // Эффект истек - возвращаем исходные значения
+                this.revertEffect(game, effect);
+                return false;
+            }
+            return true;
+        });
+    }
+    
+    revertEffect(game, effect) {
+        switch(effect.type) {
+            case 'sizeUp':
+                game.paddle.sizeX = effect.originalSize;
+                break;
+            case 'speedUp':
+                game.paddle.speed = effect.originalSpeed;
+                break;
+            case 'threeBalls':
+                game.balls = game.balls[0];
+                break;
+        }
+    }
+}
+
+// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\Managers\LevelsManager.js =====
+import { gameConfig } from "../config.js";
+import { Block } from "../GameObjects/Entite.js";
+
+export class Level {
+    constructor(levelConfig) {
+        this.blocks = [];
+
+        this.canvasWidth = gameConfig.canvas.width;
+        this.generate(levelConfig);
+    }
+    
+    generate(levelConfig) {
+        const { rows, cols, padding, map } = levelConfig;
+        const blockWidth = 80;
+        const blockHeight = 30;
+
+        const colors = ['#ff0000', '#ff8800', '#ffff00', '#00ff00', '#0004ffff', '#7700ffff', '#2f0164ff'];
+        const totalWidth = cols * blockWidth + (cols - 1) * padding;
+        const offsetX = (this.canvasWidth - totalWidth) / 2;
+        
+        for (let row = 0; row < rows; row++) {
+            const rowString = map[row];
+            
+            for (let col = 0; col < cols; col++) {
+                const blockType = parseInt(rowString[col]);
+                
+                if (blockType === 0) continue;
+                
+                const x = offsetX + col * (blockWidth + padding);
+                const y = 50 + row * (blockHeight + padding);
+                const color = colors[row % colors.length];
+                const health = blockType;
+                
+                this.blocks.push(new Block(x, y, blockWidth, blockHeight, color, health));
+            }
+        }
+    }
+
+    generateDebug(rows, cols, padding, health) {
+        this.blocks = [];
+        const blockWidth = 80;
+        const blockHeight = 30;
+
+        const colors = ['#ff0000', '#ff8800', '#ffff00', '#00ff00', '#0004ffff', '#7700ffff', '#2f0164ff'];
+        const totalWidth = cols * blockWidth + (cols - 1) * padding;
+        const offsetX = (this.canvasWidth - totalWidth) / 2;
+        
+        for (let row = 0; row < rows; row++) {
+            
+            for (let col = 0; col < cols; col++) {
+
+                const x = offsetX + col * (blockWidth + padding);
+                const y = 50 + row * (blockHeight + padding);
+                
+                this.blocks.push(new Block(x, y, blockWidth, blockHeight, colors[1], health));
+            }
+        }
+    }
+    
+    isCleared() {
+        return this.blocks.every(b => b.isDestroyed);
+    }
+    
+    draw(ctx) {
+        for (const block of this.blocks) {
+            block.draw(ctx);
+        }
+    }
+}
+
+// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\Managers\ScoreManager.js =====
+import { gameConfig } from "../config.js";
+
+export class ScoreManager {
+    constructor() {
+        this.score = 0;
+        this.reset();
+    }
+    
+    reset() {
+        this.score = 0;
+    } 
+
+    onBlockDestroy(block, bonusManager){
+        this.score += block.points;
+        bonusManager.tryDropBonuse(block.x, block.y)
+    }
+}
+
+// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\Managers\UIManager.js =====
+
+export class UIManager {
+    constructor() {
+        // Панели меню
+        this.mainMenu = document.getElementById('main-menu');
+        this.gameOverScreen = document.getElementById('game-over');
+        this.pauseScreen = document.getElementById('game-pause');
+
+        // Уведомления
+        this.notifLevel = document.getElementById('notification-level');
+        this.notifBonus = document.getElementById('notification-bonus');
+        this.notifLevelValue = document.getElementById('notif-level-value');
+        this.notifBonusName = document.getElementById('notif-bonus-name');
+        
+        // Элементы панели статистики
+        this.levelDisplay = document.getElementById('level-display');
+        this.livesDisplay = document.getElementById('lives-display');
+        this.scoreDisplay = document.getElementById('score-display');
+        this.blocksDisplay = document.getElementById('blocks-display');
+        
+        // Таймеры для автоматического скрытия
+        this.hideTimers = {};
+    }
+        
+    // ========== УВЕДОМЛЕНИЯ ==========
+    showNotification(element, duration = 2000) {
+        if (this.hideTimers[element.id]) {
+            clearTimeout(this.hideTimers[element.id]);
+        }
+        
+        element.classList.remove('show', 'hidden');
+        void element.offsetWidth; // Форсируем reflow
+        element.classList.add('show');
+        
+        this.hideTimers[element.id] = setTimeout(() => {
+            element.classList.remove('show');
+            element.classList.add('hidden');
+            delete this.hideTimers[element.id];
+        }, duration);
+    }
+    
+    showLevelNotification(level) {
+        if (this.notifLevelValue) {
+            this.notifLevelValue.textContent = level;
+        }
+        this.showNotification(this.notifLevel, 2500);
+    }
+    
+    showBonusNotification(bonusName) {
+        if (this.notifBonusName) {
+            this.notifBonusName.textContent = bonusName;
+        }
+        this.showNotification(this.notifBonus, 1500);
+    }
+    
+    // ========== ОБНОВЛЕНИЕ СТАТИСТИКИ ==========
+    updateScore(score) {
+        if (this.scoreDisplay) this.scoreDisplay.textContent = score;
+    }
+    
+    updateLevelInfo(level, lives) {
+        if (this.levelDisplay) this.levelDisplay.textContent = level;
+        if (this.livesDisplay) this.livesDisplay.textContent = lives;
+    }
+    
+    updateBlocksDestroyed(count) {
+        if (this.blocksDisplay) this.blocksDisplay.textContent = count;
+    }
+    
+    updateAll(scoreManager, level, lives, blocksDestroyed) {
+        this.updateScore(scoreManager.score);
+        this.updateLevelInfo(level, lives);
+        this.updateBlocksDestroyed(blocksDestroyed);
+    }
+    
+    // ========== МЕНЮ ==========
+    showMainMenu() {
+        this.mainMenu.classList.remove('hidden');
+    }
+    
+    hideMainMenu() {
+        this.mainMenu.classList.add('hidden');
+    }
+    
+    showGameOver() {
+        this.gameOverScreen.classList.remove('hidden');
+    }
+    
+    hideGameOver() {
+        this.gameOverScreen.classList.add('hidden');
+    }
+    
+    showAndHidePause(isPaused) {
+        if (isPaused) {
+            this.pauseScreen.classList.remove('hidden');
+        } else {
+            this.pauseScreen.classList.add('hidden');
+        }
+    }
+
+}
+
+// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\GameObjects\Bonus.js =====
+import { GameObject } from "./GameObject.js";
+
+export class Bonus extends GameObject {
+    constructor(x, y, type, duration) {
+        super(x, y, 20, 20);
+        
+        this.type = type; // 'health', 'fullHealth', 'fireRate', 'multiShot', 'shield', 'strongShield'
+        this.speed = 2; // Скорость падения
+        this.lifetime = 10000; // Бонус исчезает через 10 секунд
+        this.lifetimeElapsed = 0;
+        this.radius = 5;
+        this.duration = duration;
+
+        // Настройка внешнего вида в зависимости от типа
+        this.setupAppearance();
+    }
+    
+    setupAppearance() {
+        switch(this.type) {
+            case 'health':
+                this.color = '#00ff00';
+                this.symbol = '❤️';
+                this.name = 'Здоровье';
+                break;
+
+            case 'sizeUp':
+                this.color = '#00ff00';
+                this.symbol = '📏';
+                this.name = 'Платформа длиннее';
+                break;
+
+            case 'threeBalls':
+                this.color = '#00ff00';
+                this.symbol = '🎱';
+                this.name = '+3 мяча';
+                break;
+
+            case 'speedUp':
+                this.color = '#00ff00';
+                this.symbol = '🚀';
+                this.name = 'Платформа быстрее';
+                break;
+        }
+    }
+    
+    move(deltaTime) {
+        // Движение тоже лучше привязать к deltaTime для плавности при лагах/паузах
+        const speedMultiplier = deltaTime / 16; // Нормализация под ~60 FPS
+        this.y += this.speed * speedMultiplier;
+        
+        // ⏱️ Увеличиваем счетчик времени жизни только при активном движении
+        this.lifetimeElapsed += deltaTime;
+    }
+    
+    isExpired() {
+        return this.lifetimeElapsed >= this.lifetime;
+    }
+    
+    draw(ctx) {
+        // Рисуем фон
+        ctx.fillStyle = this.color;
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Рисуем символ
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+
+
+        ctx.fillText(this.symbol, this.x + this.sizeX / 2, this.y + this.sizeY / 2);
+    }
+}
+
+// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\GameObjects\Entite.js =====
+import { GameObject } from "./GameObject.js";
+
+import { gameConfig } from "../config.js";
+
+
+export class Paddle extends GameObject {
+    constructor(x, y, sizeX, sizeY) {
+        super(x, y, sizeX, sizeY);
+        this.sizeY = gameConfig.paddle.paddleHeight; 
+        this.sizeX = gameConfig.paddle.paddleWidth;
+
+        this.canvasHeight = gameConfig.canvas.height;
+        this.canvasWidth = gameConfig.canvas.width;
+
+        this.lastX = x; 
+
+        this.speed = 8;
+        this.velocity = 0;
+    }
+    
+    moveLeft() {
+        this.x -= this.speed;
+        if (this.x < 0) this.x = 0;
+    }
+    
+    moveRight() {
+        this.x += this.speed;
+        if (this.x + this.sizeX > this.canvasWidth) {
+            this.x = this.canvasWidth - this.sizeX;
+        }
+    }
+
+    // Вычисляем скорость платформы
+    updateLastPosition() {
+        this.velocity = this.x - this.lastX; // ← Скорость = изменение позиции
+        this.lastX = this.x;
+    }
+    
+    draw(ctx) {
+        ctx.fillStyle = '#00d4ff';
+        ctx.fillRect(this.x, this.y, this.sizeX, this.sizeY);
+    }
+}
+
+export class Ball extends GameObject {
+    constructor(x, y, radius, speed) {
+        super(x, y, radius * 2, radius * 2);
+        this.radius = radius;
+        this.baseSpeed = speed;
+        this.dx = 0;
+        this.dy = 0;
+        this.isAttached = true; // Мяч "прилип" к платформе в начале
+        this.isLost = false;
+        this.paddle = null;
+
+        this.prevX = x;
+        this.prevY = y;
+    }
+    
+    move() {
+        if (this.isAttached) return; // Ждём запуска
+        this.prevX = this.x;
+        this.prevY = this.y;
+
+        this.x += this.dx;
+        this.y += this.dy;
+    }
+
+    launch() {
+        if (!this.isAttached) return;
+        this.isAttached = false;
+
+        // Получаем направление платформы в момент запуска
+        const paddleDirection = this.paddle ? this.paddle.velocity : 0;
+
+        console.log(paddleDirection);
+        // Если платформа движется — используем это, иначе небольшое случайное отклонение
+        if (paddleDirection !== 0) {
+            this.dx = paddleDirection * 2; // Влияние платформы
+        } else {
+            this.dx = 0; // Случайное отклонение
+        }
+        
+
+        this.dy = -this.baseSpeed;
+        
+        // Нормализуем скорость, чтобы она была одинаковой
+        const currentSpeed = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
+        this.dx = (this.dx / currentSpeed) * this.baseSpeed;
+        this.dy = (this.dy / currentSpeed) * this.baseSpeed;
+    }
+    
+    // Отскок от стен
+    checkWallCollision(canvasWidth, canvasHeight) {
+        // Левая/правая стена
+        if (this.x - this.radius < 0 || this.x + this.radius > canvasWidth) {
+            this.dx = -this.dx;
+        }
+        // Верхняя стена
+        if (this.y - this.radius < 0) {
+            this.dy = -this.dy;
+        }
+        // Мяч упал вниз — потеря жизни
+        if (this.y + this.radius > canvasHeight) {
+            return true; // сигнал о потере мяча
+        }
+        return false;
+    }
+    
+    draw(ctx) {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+export class Block extends GameObject {
+    constructor(x, y, width, height, color, health = 1) {
+        super(x, y, width, height);
+        this.color = color;
+        this.points = 5;
+        this.health = health;
+        this.maxHealth = health;
+        this.isDestroyed = false;
+        this.radius = 5;
+    }
+    
+    takeDamage() {
+        this.health--;
+        if (this.health <= 0) {
+            this.isDestroyed = true;
+            return true; // блок уничтожен
+        }
+        return false;
+    }
+    
+    draw(ctx) {
+        if (this.isDestroyed) return;
+        
+        // Меняем цвет в зависимости от оставшегося здоровья
+        const alpha = this.health / this.maxHealth;
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = 0.3 + (alpha * 0.7);
+        ctx.beginPath();
+        ctx.roundRect(this.x, this.y, this.sizeX, this.sizeY, this.radius);
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+        
+        // Рамка
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.stroke(); 
+    }
+}
+
+// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\GameObjects\GameObject.js =====
+export class GameObject {
+    constructor(x, y, sizeX, sizeY) {
+        this.x = x;
+        this.y = y;
+        this.sizeX = sizeX;
+        this.sizeY = sizeY; 
+    }
+    
+    // Общий метод для проверки выхода за экран
+    isOffScreen(canvasWidth, canvasHeight) {
+        return (
+            this.x + this.sizeX < 0 ||    // Ушел за левый край
+            this.x > canvasWidth ||        // Ушел за правый край
+            this.y + this.sizeY < 0 ||    // Ушел за верхний край
+            this.y > canvasHeight          // Ушел за нижний край
+        );
+    }
+}
+
+// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\js\Factorys\EnemyFactory.js =====
+import { Enemy } from "../GameObjects/Creatures.js";
+import { gameConfig } from "../config.js";
+
+export class EnemyFactory {
+    constructor(spriteSheets) {
+        this.spriteSheets = spriteSheets;
+    }
+
+    createByType(typeName) {
+        const enemyType = gameConfig.enemyTypes.find(t => t.name === typeName);
+        
+        if (!enemyType) {
+            console.warn(`Тип врага "${typeName}" не найден!`);
+            return null;
+        }
+        
+        const spriteSheet = this.spriteSheets[typeName];
+        if (!spriteSheet) {
+            console.warn(`Спрайт-лист для "${typeName}" не загружен!`);
+            return null;
+        }
+        const spriteID = Math.floor(Math.random() * enemyType.sprites.length);
+
+        
+        return new Enemy(
+            gameConfig.canvas.width,
+            gameConfig.canvas.height,
+            enemyType,
+            spriteID,
+            spriteSheet
+        );
+    }
+    
+    createRandom() {
+        const types = gameConfig.enemyTypes;
+        const randomType = types[Math.floor(Math.random() * types.length)];
+        return this.createByType(randomType.name);
+    }
+
+    // createBoss(canvasWidth, canvasHeight){
+    //     const types = gameConfig.enemyTypes;
+    //     let randomTypeNum = types.length-1;
+    //     const bossType = types[randomTypeNum];
+    //     // const bossSprite = bossType.sprites[
+    //     //     Math.floor(Math.random() * randomType.sprites.length)
+    //     // ];
+    //     const spriteID = Math.floor(Math.random() * bossType.sprites.length);
+        
+ 
+    //     // Проверяем, что спрайт-лист загружен
+    //     const spriteSheet = this.spriteSheets[bossType.name];
+    //     if (!spriteSheet) {
+    //         console.warn(`Спрайт-лист для ${randomType.name} ещё не загружен!`);
+    //         // Возвращаем null или создаем врага с дефолтным спрайтом
+    //         return null;
+    //     }
+
+    //     return new Enemy(
+    //         canvasWidth,
+    //         canvasHeight,
+    //         randomTypeNum,
+    //         spriteID,
+    //         spriteSheet
+    //     );
+    // }
+}
+
+// ===== C:\Users\Vishnevskii\source\repos\TestCanvasGame\ArcadeGames\js\games\Arcanoid\css\style.css =====
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #1a1a1a;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #fff;
+    user-select: none;
+}
+
+/* Общие стили для игровых уведомлений */
+.game-notification {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 30px;
+    font-size: 28px;
+    font-weight: bold;
+    border-radius: 10px;
+    z-index: 150;
+    pointer-events: none; /* Чтобы не мешали кликам */
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Анимация появления/исчезновения */
+@keyframes slideFadeIn {
+    0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    70% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+}
+
+.game-notification.show {
+    animation: slideFadeIn 2s ease-in-out forwards;
+}
+
+/* Специфичные стили для каждого типа */
+#notification-multiplier {
+    top: 40%;
+    background: rgba(255, 215, 0, 0.95);
+    color: #000;
+    border: 2px solid #ffd700;
+}
+
+#notification-wave {
+    top: 35%;
+    background: rgba(0, 150, 255, 0.95);
+    color: #fff;
+    border: 2px solid #0096ff;
+}
+
+#notification-bonus {
+    top: 45%;
+    background: rgba(0, 255, 100, 0.95);
+    color: #000;
+    border: 2px solid #00ff64;
+}
+
+
+/* Главный контейнер теперь flex */
+#game-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1400px; /* Ограничиваем общую ширину */
+    margin: 0 auto;
+}
+
+#game-area {
+    position: relative; /* Важно для абсолютного позиционирования уведомлений */
+    flex-shrink: 0;     /* Запрещаем сжимать игровую область */
+    width: 1000px;
+    height: 900px;
+}
+
+/* Фон со звездами */
+#backgroundCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0; /* Лежит под игрой */
+    background-color: #050510; /* Глубокий темно-синий космос */
+}
+
+/* Основная игра */
+#gameCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1; /* Лежит над звездами */
+    background-color: transparent; /* Убираем старый фиолетовый фон */
+    border: none; /* Убираем рамку, если она мешает восприятию глубины */
+}
+
+/* #gameCanvas {
+    width: 1000px;
+    height: 900px;
+    border: 2px solid #333;
+    background-color: rgb(81, 80, 165);
+    z-index: 1;
+} */
+
+/* Правая панель */
+#stats-panel {
+    width: 300px;
+    background: rgba(77, 77, 77, 0.95);
+    border: 2px solid #8b7355;
+    border-radius: 8px;
+    padding: 20px;
+    color: #fff;
+    flex-shrink: 0;
+    height: 900px; /* Высота как у канваса */
+    box-sizing: border-box;
+    overflow-y: auto; /* Скролл, если контента станет много */
+}
+
+.stat-block {
+    margin-bottom: 20px;
+}
+
+.stat-label {
+    display: block;
+    font-size: 14px;
+    color: #aaa;
+    margin-bottom: 5px;
+}
+.stat-value {
+    font-size: 14px;
+    color: #ffffff;
+    margin-bottom: 5px;
+}
+
+.bar-container {
+    width: 100%;
+    height: 20px;
+    background: #333;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+#panel-health-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff0000, #00ff00);
+    transition: width 0.3s ease; /* Плавная анимация изменения здоровья */
+}
+
+.menu-section {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #555;
+}
+
+
+
+.ui-panel {
+    position: absolute;
+    background: rgba(77, 77, 77, 0.95);
+    border: 2px solid #8b7355;
+    border-radius: 4px;
+    padding: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    z-index: 10;
+}
+
+#main-menu {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    width: 400px;
+    z-index: 100;
+}
+
+#bottom-bar {
+    bottom: 10px;
+    left: 10px;
+    display: flex;
+    gap: 10px;
+    min-height: 40px;
+    align-items: center;
+    z-index: 10;
+    pointer-events: auto !important; /* Убеждаемся, что клики проходят */
+}
+
+#game-over {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 200;
+}
+
+#game-pause {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 200;
+}
+
+button {
+    background: #000000;
+    color: #fff;
+    border: 1px solid #000000;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 3px;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: #4e4e4e;
+}
+
+button:disabled {
+    background: #333;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.hidden {
+    display: none !important;
+}
+
+h1 {
+    margin-top: 0;
+    color: #ffffff;
+}
+
+.control-group {
+    margin: 15px 0;
+}
+

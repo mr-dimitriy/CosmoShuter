@@ -10,7 +10,8 @@ export class ScoreManager {
         this.score = 0;
     } 
 
-    onBlockDestroy(block){
+    onBlockDestroy(block, bonusManager){
         this.score += block.points;
+        bonusManager.tryDropBonuse(block.x, block.y)
     }
 }
